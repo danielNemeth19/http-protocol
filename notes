@@ -1,0 +1,21 @@
+TCP
+- run tcplistener and redirect its output:
+go run ./cmd/tcplistener | tee /tmp/tcp.txt
+- run this command from other shell - netcat will transmit the message with 1 second timeout time:
+printf "Do you have what it takes to be an engineer at TheStartup™?\r\n" | nc -w 1 127.0.0.1 42069
+
+TCP: UDP sender
+- run udp sender:
+go run ./cmd/udpsender
+- in separate terminal run - this starts up a upd listener (-l option):
+nc -u -l 42069
+- messages sent in the udp sender terminal should appear in the other one
+
+Requests: TCP to HTTP
+- run the tcplistener and redirect its output:
+go run ./cmd/tcplistener | tee /tmp/rawget.http
+
+- from another shell send a GET request to it:
+curl http://localhost:42069/coffee
+
+- the request will hang since TCP listener only listens but request will come in
