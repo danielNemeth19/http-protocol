@@ -1,3 +1,14 @@
+RFCs:
+At the moment, there are several key RFCs for HTTP/1.1:
+    RFC 2616 – Deprecated by RFC 7231.
+    RFC 7231 – An active and widely referenced RFC.
+    RFC 9110 – Covers HTTP "semantics."
+    RFC 9112 – Easier to read than RFC 7231, relies on understanding from RFC 9110.
+
+9110 and 9112 have better separation of information.
+7231 can be a bit verbose whereas 9112 is much more to the point, but makes a lot of assumptions that you understand a decent amount of 9110.
+
+
 TCP
 - run tcplistener and redirect its output:
 go run ./cmd/tcplistener | tee /tmp/tcp.txt
@@ -19,3 +30,6 @@ go run ./cmd/tcplistener | tee /tmp/rawget.http
 curl http://localhost:42069/coffee
 
 - the request will hang since TCP listener only listens but request will come in
+
+
+Requests: HTTP POST
