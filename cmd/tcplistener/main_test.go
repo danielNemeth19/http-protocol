@@ -54,38 +54,38 @@ func (h *HTTPMessage) httpMessageAsReadCloser() io.ReadCloser {
 }
 
 // func TestParsingHTTPGet(t *testing.T) {
-	// message := HTTPMessage{
-		// StartLine: "GET /coffee HTTP/1.1",
-		// FieldLines: []string{
-			// "Host: localhost:42069",
-			// "User-Agent: curl",
-			// "Accept: */*",
-		// },
-		// Body: "",
-	// }
-	// stream := message.httpMessageAsReadCloser()
-	// var got []string
-	// for line := range GetLinesChannel(stream) {
-		// got = append(got, line)
-	// }
-	// expected := message.expectedLines()
-	// result := slices.Compare(got, expected)
-	// if result != 0 {
-		// t.Errorf("Slices are different")
-	// }
-	// fmt.Println(got)
-	// for i, e := range got {
-		// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
-	// }
-	// fmt.Println(expected)
-	// for i, e := range expected {
-		// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
-	// }
+// message := HTTPMessage{
+// StartLine: "GET /coffee HTTP/1.1",
+// FieldLines: []string{
+// "Host: localhost:42069",
+// "User-Agent: curl",
+// "Accept: */*",
+// },
+// Body: "",
+// }
+// stream := message.httpMessageAsReadCloser()
+// var got []string
+// for line := range GetLinesChannel(stream) {
+// got = append(got, line)
+// }
+// expected := message.expectedLines()
+// result := slices.Compare(got, expected)
+// if result != 0 {
+// t.Errorf("Slices are different")
+// }
+// fmt.Println(got)
+// for i, e := range got {
+// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
+// }
+// fmt.Println(expected)
+// for i, e := range expected {
+// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
+// }
 // }
 
 func TestParsingHTTPPost(t *testing.T) {
 	message := HTTPMessage{
-		StartLine: "POST /",
+		StartLine: "POST /coffee HTTP/1.1",
 		FieldLines: []string{
 			"Host: localhost:42069",
 			"User-Agent: curl/8.16.0",
@@ -103,7 +103,7 @@ func TestParsingHTTPPost(t *testing.T) {
 	// expected := message.expectedLines()
 	// result := slices.Compare(got, expected)
 	// if result != 0 {
-		// t.Errorf("Slices are different")
+	// t.Errorf("Slices are different")
 	// }
 	fmt.Println(got)
 	for i, e := range got {
@@ -111,6 +111,6 @@ func TestParsingHTTPPost(t *testing.T) {
 	}
 	// fmt.Println(expected)
 	// for i, e := range expected {
-		// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
+	// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
 	// }
 }

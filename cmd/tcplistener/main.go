@@ -12,28 +12,44 @@ func GetLinesChannel(f io.ReadCloser) <-chan string {
 	buf := make([]byte, 8)
 	curr_line := ""
 	endLine := "\r\n"
-	// lastChar := ""
+	currEndLine := false
+	isBody := false
 	go func() {
 		defer f.Close()
 		for {
 			n, err := f.Read(buf)
 			if n > 0 {
-				// TODO: every "" needs to be ignored excepts if it a double one
+				if isBody {
+					curr_line += string(buf[:n])
+				}
 				parts := strings.Split(string(buf[:n]), endLine)
 				if len(parts) == 1 {
 					curr_line += parts[0]
+					currEndLine = false
 				} else if len(parts) == 2 {
+					if parts[0] == "" {
+						if currEndLine {
+							isBody = true
+							curr_line = parts[1]
+						} else {
+							currEndLine = true
+						}
+					}
 					curr_line += parts[0]
 					ch <- curr_line
+					if parts[1] == "" {
+						currEndLine = true
+					}
 					curr_line = parts[1]
 				} else if len(parts) == 3 {
 					curr_line += parts[0]
 					ch <- curr_line
-					ch <- "\r\n"
+					ch <- endLine
 					curr_line = parts[2]
 				}
 			}
 			if err != nil {
+				ch <- curr_line
 				break
 			}
 		}
