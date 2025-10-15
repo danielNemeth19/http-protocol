@@ -20,7 +20,9 @@ func GetLinesChannel(f io.ReadCloser) <-chan string {
 			n, err := f.Read(buf)
 			if n > 0 {
 				if isBody {
-					curr_line += string(buf[:n])
+					part := string(buf[:n])
+					curr_line += part
+					continue
 				}
 				parts := strings.Split(string(buf[:n]), endLine)
 				if len(parts) == 1 {
@@ -30,7 +32,9 @@ func GetLinesChannel(f io.ReadCloser) <-chan string {
 					if parts[0] == "" {
 						if currEndLine {
 							isBody = true
+							ch <- endLine
 							curr_line = parts[1]
+							continue
 						} else {
 							currEndLine = true
 						}
@@ -49,7 +53,9 @@ func GetLinesChannel(f io.ReadCloser) <-chan string {
 				}
 			}
 			if err != nil {
-				ch <- curr_line
+				if isBody {
+					ch <- curr_line
+				}
 				break
 			}
 		}

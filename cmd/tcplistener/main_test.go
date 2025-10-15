@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"io"
-	// "slices"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -53,35 +52,27 @@ func (h *HTTPMessage) httpMessageAsReadCloser() io.ReadCloser {
 	return fh
 }
 
-// func TestParsingHTTPGet(t *testing.T) {
-// message := HTTPMessage{
-// StartLine: "GET /coffee HTTP/1.1",
-// FieldLines: []string{
-// "Host: localhost:42069",
-// "User-Agent: curl",
-// "Accept: */*",
-// },
-// Body: "",
-// }
-// stream := message.httpMessageAsReadCloser()
-// var got []string
-// for line := range GetLinesChannel(stream) {
-// got = append(got, line)
-// }
-// expected := message.expectedLines()
-// result := slices.Compare(got, expected)
-// if result != 0 {
-// t.Errorf("Slices are different")
-// }
-// fmt.Println(got)
-// for i, e := range got {
-// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
-// }
-// fmt.Println(expected)
-// for i, e := range expected {
-// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
-// }
-// }
+func TestParsingHTTPGet(t *testing.T) {
+	message := HTTPMessage{
+		StartLine: "GET /coffee HTTP/1.1",
+		FieldLines: []string{
+			"Host: localhost:42069",
+			"User-Agent: curl",
+			"Accept: */*",
+		},
+		Body: "",
+	}
+	stream := message.httpMessageAsReadCloser()
+	var got []string
+	for line := range GetLinesChannel(stream) {
+		got = append(got, line)
+	}
+	expected := message.expectedLines()
+	result := slices.Compare(got, expected)
+	if result != 0 {
+		t.Errorf("Slices are different - got: %v | expected: %v\n", got, expected)
+	}
+}
 
 func TestParsingHTTPPost(t *testing.T) {
 	message := HTTPMessage{
@@ -100,17 +91,9 @@ func TestParsingHTTPPost(t *testing.T) {
 	for line := range GetLinesChannel(stream) {
 		got = append(got, line)
 	}
-	// expected := message.expectedLines()
-	// result := slices.Compare(got, expected)
-	// if result != 0 {
-	// t.Errorf("Slices are different")
-	// }
-	fmt.Println(got)
-	for i, e := range got {
-		fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
+	expected := message.expectedLines()
+	result := slices.Compare(got, expected)
+	if result != 0 {
+		t.Errorf("Slices are different - got: %v | expected: %v\n", got, expected)
 	}
-	// fmt.Println(expected)
-	// for i, e := range expected {
-	// fmt.Printf("index: %d -- elem: %s -- len of elem %d\n", i, e, len(e))
-	// }
 }
