@@ -3,21 +3,21 @@ package request
 import (
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 )
 
-type Request struct {
-	RequestLine RequestLine
+var methods = []string{
+	"GET", "POST",
+	"DELETE", "PATCH",
+	"PUT", "OPTIONS",
+	"HEAD", "TRACE", "CONNECT",
 }
 
-func isValidMethod(method string) bool {
-	var methods = []string{"GET", "POST", "DELETE", "PATCH", "PUT", "OPTIONS", "HEAD", "TRACE", "CONNECT"}
-	for _, m := range methods {
-		if m == method {
-			return true
-		}
-	}
-	return false
+type Request struct {
+	RequestLine RequestLine
+	initalized int
+	done int
 }
 
 type RequestLine struct {
@@ -30,19 +30,20 @@ func parseRequestLine(line string) (*RequestLine, error) {
 	var reqLine RequestLine
 	parts := strings.Split(line, " ")
 	if len(parts) != 3 {
-		return nil, fmt.Errorf("Request line supposed to have three parts, got: %s\n", parts)
+		return nil, fmt.Errorf("Request line supposed to have three parts, got: %d\n", len(parts))
 	}
-	method, target, versionPart := parts[0], parts[1], parts[2]
-	if !isValidMethod(method) {
+	method, target, protocolPart := parts[0], parts[1], parts[2]
+	if !slices.Contains(methods, method) {
 		return nil, fmt.Errorf("%s is not a valid method\n", method)
 	}
-	vp := strings.Split(versionPart, "/")
-	if len(vp) != 2 || vp[1] != "1.1" {
-		return nil, fmt.Errorf("HTTP Version is unsupported: %s\n", versionPart)
+	parts = strings.Split(protocolPart, "/")
+	if len(parts) != 2 || parts[1] != "1.1" {
+		return nil, fmt.Errorf("HTTP Version is unsupported: %s\n", parts[1])
 	}
+	version := parts[1]
 	reqLine.Method = method
 	reqLine.RequestTarget = target
-	reqLine.HttpVersion = vp[1]
+	reqLine.HttpVersion = version
 	return &reqLine, nil
 }
 
