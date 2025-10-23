@@ -9,7 +9,7 @@ import (
 
 func GetLinesChannel(f io.ReadCloser) <-chan string {
 	ch := make(chan string)
-	buf := make([]byte, 8)
+	buf := make([]byte, 100)
 	curr_line := ""
 	endLine := "\r\n"
 	currEndLine := false
@@ -18,6 +18,7 @@ func GetLinesChannel(f io.ReadCloser) <-chan string {
 		defer f.Close()
 		for {
 			n, err := f.Read(buf)
+			fmt.Printf("Read: %d\n", n)
 			if n > 0 {
 				if isBody {
 					part := string(buf[:n])

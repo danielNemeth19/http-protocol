@@ -2,7 +2,6 @@ package request
 
 import (
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,7 +38,11 @@ func TestRequestFromReader_ParsesRequestLineGet(t *testing.T) {
 }
 
 func TestRequestFromReader_ParsesRequestLineWithPath(t *testing.T) {
-	r, err := RequestFromReader(strings.NewReader("GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	reader := &chunkReader{
+		data: "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 1,
+	}
+	r, err := RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "GET", r.RequestLine.Method)
@@ -48,7 +51,11 @@ func TestRequestFromReader_ParsesRequestLineWithPath(t *testing.T) {
 }
 
 func TestRequestFromReader_ParsesRequestLineWithPathPost(t *testing.T) {
-	r, err := RequestFromReader(strings.NewReader("POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	reader := &chunkReader{
+		data: "POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 9,
+	}
+	r, err := RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "POST", r.RequestLine.Method)
@@ -57,19 +64,31 @@ func TestRequestFromReader_ParsesRequestLineWithPathPost(t *testing.T) {
 }
 
 func TestRequestFromReader_RaisesErrorIfPartMissing(t *testing.T) {
-	_, err := RequestFromReader(strings.NewReader("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	reader := &chunkReader{
+		data: "/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 4,
+	}
+	_, err := RequestFromReader(reader)
 	require.Error(t, err)
 	require.EqualError(t, err, "Request line supposed to have three parts, got: 2\n")
 }
 
 func TestRequestFromReader_RaisesErrorIfMethodInvalid(t *testing.T) {
-	_, err := RequestFromReader(strings.NewReader("BLA /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	reader := &chunkReader{
+		data: "BLA /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 12,
+	}
+	_, err := RequestFromReader(reader)
 	require.Error(t, err)
 	require.EqualError(t, err, "BLA is not a valid method\n")
 }
 
 func TestRequestFromReader_RaisesErrorIfVersionUnsupported(t *testing.T) {
-	_, err := RequestFromReader(strings.NewReader("GET /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	reader := &chunkReader{
+		data: "GET /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 5,
+	}
+	_, err := RequestFromReader(reader)
 	require.Error(t, err)
 	require.EqualError(t, err, "HTTP Version is unsupported: 2.1\n")
 }
