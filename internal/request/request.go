@@ -8,6 +8,10 @@ import (
 	// "strings"
 )
 
+const endLine = "\r\n"
+
+const bufferSize = 8
+
 var methods = []string{
 	"GET", "POST",
 	"DELETE", "PATCH",
@@ -26,7 +30,6 @@ type RequestLine struct {
 	Method        string
 }
 
-const endLine = "\r\n"
 
 type parseState int
 
@@ -36,6 +39,9 @@ const (
 )
 
 func (r *Request) parse(data []byte) (int, error) {
+	if r.state == done {
+		return 0, fmt.Errorf("Error: trying to read data in done state")
+	}
 	line, n, err := parseRequestLine(data)
 	if err != nil {
 		return 0, err
@@ -51,12 +57,12 @@ func (r *Request) parse(data []byte) (int, error) {
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	var reqLine RequestLine
 
-	curr_parts := strings.Split(string(b), endLine)
-	if len(curr_parts) != 2 {
+	data := strings.Split(string(b), endLine)
+	if len(data) != 2 {
 		return nil, 0, nil
 	}
 
-	line := curr_parts[0]
+	line := data[0]
 	parts := strings.Split(line, " ")
 	if len(parts) != 3 {
 		return nil, 0, fmt.Errorf("Request line supposed to have three parts, got: %d\n", len(parts))
@@ -73,12 +79,12 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	reqLine.Method = method
 	reqLine.RequestTarget = target
 	reqLine.HttpVersion = version
-	return &reqLine, 0, nil
+	return &reqLine, len(line) + len(endLine), nil
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
-	buf := make([]byte, 8)
+	buf := make([]byte, bufferSize)
 	req := Request{state: initalized}
 	for req.state != done {
 		n, err := reader.Read(buf[readToIndex:])
@@ -92,9 +98,16 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 			copy(newBuf, buf)
 			buf = newBuf
 		}
-		n, err = req.parse(buf)
+		parsedBytes, err := req.parse(buf[:readToIndex])
 		if err != nil {
 			return nil, err
+		}
+		if parsedBytes != 0 {
+			remainderBytes := readToIndex - parsedBytes
+			newBuf := make([]byte, remainderBytes)
+			copy(newBuf, buf[parsedBytes:readToIndex])
+			buf = newBuf
+			readToIndex = remainderBytes
 		}
 	}
 	return &req, nil
