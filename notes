@@ -33,3 +33,10 @@ curl http://localhost:42069/coffee
 
 
 Requests: HTTP POST
+
+------
+Debug:
+to run a test with dlv:
+dlv test ./internal/request/ -- -test.run TestRequestFromReader_EOF
+set breakpoint:
+break ./internal/request/request.go:96

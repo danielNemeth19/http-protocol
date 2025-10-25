@@ -13,10 +13,15 @@ const endLine = "\r\n"
 const bufferSize = 8
 
 var methods = []string{
-	"GET", "POST",
-	"DELETE", "PATCH",
-	"PUT", "OPTIONS",
-	"HEAD", "TRACE", "CONNECT",
+	"GET",
+	"POST",
+	"DELETE",
+	"PATCH",
+	"PUT",
+	"OPTIONS",
+	"HEAD",
+	"TRACE",
+	"CONNECT",
 }
 
 type Request struct {
@@ -30,11 +35,10 @@ type RequestLine struct {
 	Method        string
 }
 
-
 type parseState int
 
 const (
-	initalized parseState = iota
+	initialized parseState = iota
 	done
 )
 
@@ -85,28 +89,28 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
 	buf := make([]byte, bufferSize)
-	req := Request{state: initalized}
+	req := Request{state: initialized}
 	for req.state != done {
-		n, err := reader.Read(buf[readToIndex:])
-		readToIndex += n
-		if err == io.EOF {
-			fmt.Printf("EOF HERE\n%v\n", req.state)
-			return nil, err
-		}
-		if readToIndex >= len(buf) {
+		if readToIndex >= cap(buf) {
 			newBuf := make([]byte, 2*cap(buf))
-			copy(newBuf, buf)
+			copy(newBuf, buf[:readToIndex])
 			buf = newBuf
 		}
+		n, err := reader.Read(buf[readToIndex:])
+		if err == io.EOF {
+			req.state = done
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		readToIndex += n
 		parsedBytes, err := req.parse(buf[:readToIndex])
 		if err != nil {
 			return nil, err
 		}
 		if parsedBytes != 0 {
 			remainderBytes := readToIndex - parsedBytes
-			newBuf := make([]byte, remainderBytes)
-			copy(newBuf, buf[parsedBytes:readToIndex])
-			buf = newBuf
+			copy(buf, buf[parsedBytes:readToIndex])
 			readToIndex = remainderBytes
 		}
 	}

@@ -24,6 +24,17 @@ func (cr *chunkReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+func TestRequestFromReader_EOF(t *testing.T) {
+	reader := &chunkReader{
+		data: "GE",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, r.RequestLine, RequestLine{})
+}
+
 func TestRequestFromReader_ParsesRequestLineGet(t *testing.T) {
 	reader := &chunkReader{
 		data: "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
@@ -53,7 +64,7 @@ func TestRequestFromReader_ParsesRequestLineWithPath(t *testing.T) {
 func TestRequestFromReader_ParsesRequestLineWithPathPost(t *testing.T) {
 	reader := &chunkReader{
 		data: "POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
-		numBytesPerRead: 9,
+		numBytesPerRead: 80,
 	}
 	r, err := RequestFromReader(reader)
 	require.NoError(t, err)
