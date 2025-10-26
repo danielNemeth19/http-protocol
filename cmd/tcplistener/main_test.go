@@ -2,29 +2,19 @@ package main
 
 import (
 	"io"
-	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/danielNemeth19/http-protocol/internal/request"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type HTTPMessage struct {
 	StartLine  string
 	FieldLines []string
 	Body       string
-}
-
-func (h *HTTPMessage) expectedLines() []string {
-	var m []string
-	m = append(m, h.StartLine)
-	for _, line := range h.FieldLines {
-		m = append(m, line)
-	}
-	m = append(m, "\r\n")
-	if h.Body != "" {
-		m = append(m, h.Body)
-	}
-	return m
 }
 
 func (h *HTTPMessage) createHTTPMessage() string {
@@ -63,15 +53,12 @@ func TestParsingHTTPGet(t *testing.T) {
 		Body: "",
 	}
 	stream := message.httpMessageAsReadCloser()
-	var got []string
-	for line := range GetLinesChannel(stream) {
-		got = append(got, line)
-	}
-	expected := message.expectedLines()
-	result := slices.Compare(got, expected)
-	if result != 0 {
-		t.Errorf("Slices are different - got: %v | expected: %v\n", got, expected)
-	}
+	request, err := request.RequestFromReader(stream)
+	require.NoError(t, err)
+	require.NotNil(t, request)
+	assert.Equal(t, request.RequestLine.Method, "GET")
+	assert.Equal(t, request.RequestLine.RequestTarget, "/coffee")
+	assert.Equal(t, request.RequestLine.HttpVersion, "1.1")
 }
 
 func TestParsingHTTPPost(t *testing.T) {
@@ -87,13 +74,10 @@ func TestParsingHTTPPost(t *testing.T) {
 		Body: "{\"flavor\": \"dark mode\"}",
 	}
 	stream := message.httpMessageAsReadCloser()
-	var got []string
-	for line := range GetLinesChannel(stream) {
-		got = append(got, line)
-	}
-	expected := message.expectedLines()
-	result := slices.Compare(got, expected)
-	if result != 0 {
-		t.Errorf("Slices are different - got: %v | expected: %v\n", got, expected)
-	}
+	request, err := request.RequestFromReader(stream)
+	require.NoError(t, err)
+	require.NotNil(t, request)
+	assert.Equal(t, request.RequestLine.Method, "POST")
+	assert.Equal(t, request.RequestLine.RequestTarget, "/coffee")
+	assert.Equal(t, request.RequestLine.HttpVersion, "1.1")
 }
