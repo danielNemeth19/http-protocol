@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const endLine = "\r\n"
+const EndLine = "\r\n"
 
 const bufferSize = 8
 
@@ -60,7 +60,7 @@ func (r *Request) parse(data []byte) (int, error) {
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	var reqLine RequestLine
 
-	data := strings.Split(string(b), endLine)
+	data := strings.Split(string(b), EndLine)
 	if len(data) != 2 {
 		return nil, 0, nil
 	}
@@ -82,7 +82,7 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	reqLine.Method = method
 	reqLine.RequestTarget = target
 	reqLine.HttpVersion = version
-	return &reqLine, len(line) + len(endLine), nil
+	return &reqLine, len(line) + len(EndLine), nil
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
