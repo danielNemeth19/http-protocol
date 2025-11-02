@@ -7,13 +7,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestHeaderKeyLowerCase(t *testing.T) {
+	headers := NewHeaders()
+	data := []byte("CONNECTIONS: keep-alive\r\n")
+	_, done, err := headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Contains(t, headers, "connections")
+	assert.False(t, done)
+}
+
+func TestHeaderKeyInvalidChar(t *testing.T) {
+	headers := NewHeaders()
+	data := []byte("h@st: localhost:42069\r\n")
+	n, done, err := headers.Parse(data)
+	require.Error(t, err)
+	require.EqualError(t, err, "Invalid header key: key h@st contains invalid char @")
+	require.NotNil(t, headers)
+	assert.False(t, done)
+	assert.Equal(t, 0, n)
+}
+
 func TestValidSingleHeader(t *testing.T) {
 	headers := NewHeaders()
 	data := []byte("Host: localhost:42069\r\n\r\n")
 	n, done, err := headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	assert.Equal(t, 23, n)
 	assert.False(t, done)
 }
@@ -24,7 +45,7 @@ func TestValidSingleHeaderWithExtraSpace(t *testing.T) {
 	n, done, err := headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	assert.Equal(t, 24, n)
 	assert.False(t, done)
 }
@@ -37,8 +58,8 @@ func TestValidTwoHeadersWithExistingHeaders(t *testing.T) {
 	n, done, err := headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)
-	assert.Equal(t, "localhost:42069", headers["Host"])
-	assert.Equal(t, "application/json", headers["Content-Type"])
+	assert.Equal(t, "localhost:42069", headers["host"])
+	assert.Equal(t, "application/json", headers["content-type"])
 	assert.Equal(t, 32, n)
 	assert.False(t, done)
 }
