@@ -7,27 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHeaderKeyLowerCase(t *testing.T) {
-	headers := NewHeaders()
-	data := []byte("CONNECTIONS: keep-alive\r\n")
-	_, done, err := headers.Parse(data)
-	require.NoError(t, err)
-	require.NotNil(t, headers)
-	assert.Contains(t, headers, "connections")
-	assert.False(t, done)
-}
-
-func TestHeaderKeyInvalidChar(t *testing.T) {
-	headers := NewHeaders()
-	data := []byte("h@st: localhost:42069\r\n")
-	n, done, err := headers.Parse(data)
-	require.Error(t, err)
-	require.EqualError(t, err, "Invalid header key: key h@st contains invalid char @")
-	require.NotNil(t, headers)
-	assert.False(t, done)
-	assert.Equal(t, 0, n)
-}
-
 func TestValidSingleHeader(t *testing.T) {
 	headers := NewHeaders()
 	data := []byte("Host: localhost:42069\r\n\r\n")
@@ -103,4 +82,38 @@ func TestInvalidSpacingHeader(t *testing.T) {
 	require.EqualError(t, err, "Invalid field name")
 	assert.Equal(t, 0, n)
 	assert.False(t, done)
+}
+
+func TestHeaderKeyLowerCase(t *testing.T) {
+	headers := NewHeaders()
+	data := []byte("CONNECTIONS: keep-alive\r\n")
+	_, done, err := headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Contains(t, headers, "connections")
+	assert.False(t, done)
+}
+
+func TestHeaderKeyInvalidChar(t *testing.T) {
+	headers := NewHeaders()
+	data := []byte("h@st: localhost:42069\r\n")
+	n, done, err := headers.Parse(data)
+	require.Error(t, err)
+	require.EqualError(t, err, "Invalid header key: key h@st contains invalid char @")
+	require.NotNil(t, headers)
+	assert.False(t, done)
+	assert.Equal(t, 0, n)
+}
+
+func TestMultipleValueForSameKey(t *testing.T) {
+	headers := NewHeaders()
+	headers["accept"] = "text/html"
+	data := []byte("Accept: application/xml\r\n")
+	n, done, err := headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Contains(t, headers, "accept")
+	assert.Equal(t, "text/html,application/xml", headers["accept"])
+	assert.False(t, done)
+	assert.Equal(t, 25, n)
 }

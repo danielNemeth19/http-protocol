@@ -38,7 +38,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	fieldValue := string(fieldLine[fieldSep+1:])
 
 	fieldName = strings.TrimLeft(fieldName, " ")
-	fieldValue = strings.Trim(fieldValue, " ")
+	fieldValue = strings.TrimSpace(fieldValue)
 
 	if strings.HasSuffix(fieldName, " ") {
 		return 0, false, fmt.Errorf("Invalid field name")
@@ -49,6 +49,14 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		}
 	}
 	fieldName = strings.ToLower(fieldName)
-	h[fieldName] = fieldValue
+	h.Set(fieldName, fieldValue)
 	return len(fieldLine) + len(endLine), false, nil
+}
+
+func (h Headers) Set(key, value string) {
+	if current, exists := h[key]; exists {
+		h[key] = current + "," + value
+	} else {
+		h[key] = value
+	}
 }
