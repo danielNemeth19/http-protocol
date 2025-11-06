@@ -45,7 +45,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	}
 	for _, c := range fieldName {
 		if !(unicode.IsLetter(c) || unicode.IsDigit(c) || slices.Contains(specialChars, string(c))) {
-			return 0, false, fmt.Errorf("Invalid header key: key %s contains invalid char %s", fieldName, string(c))
+			return 0, false, fmt.Errorf("Invalid header key: key contains invalid char %s", string(c))
 		}
 	}
 	fieldName = strings.ToLower(fieldName)

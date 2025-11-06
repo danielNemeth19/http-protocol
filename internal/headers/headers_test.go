@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
+// TODO
 func TestValidSingleHeader(t *testing.T) {
 	headers := NewHeaders()
 	data := []byte("Host: localhost:42069\r\n\r\n")
@@ -99,7 +99,7 @@ func TestHeaderKeyInvalidChar(t *testing.T) {
 	data := []byte("h@st: localhost:42069\r\n")
 	n, done, err := headers.Parse(data)
 	require.Error(t, err)
-	require.EqualError(t, err, "Invalid header key: key h@st contains invalid char @")
+	require.EqualError(t, err, "Invalid header key: key contains invalid char @")
 	require.NotNil(t, headers)
 	assert.False(t, done)
 	assert.Equal(t, 0, n)

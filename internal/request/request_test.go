@@ -9,16 +9,16 @@ import (
 )
 
 type chunkReader struct {
-	data string
+	data            string
 	numBytesPerRead int
-	pos int
+	pos             int
 }
 
 func (cr *chunkReader) Read(p []byte) (n int, err error) {
 	if cr.pos >= len(cr.data) {
 		return 0, io.EOF
 	}
-	endIndex := min(cr.pos + cr.numBytesPerRead, len(cr.data))
+	endIndex := min(cr.pos+cr.numBytesPerRead, len(cr.data))
 	n = copy(p, cr.data[cr.pos:endIndex])
 	cr.pos += n
 	return n, nil
@@ -26,7 +26,7 @@ func (cr *chunkReader) Read(p []byte) (n int, err error) {
 
 func TestRequestFromReader_EOF(t *testing.T) {
 	reader := &chunkReader{
-		data: "GE",
+		data:            "GE",
 		numBytesPerRead: 3,
 	}
 	r, err := RequestFromReader(reader)
@@ -37,7 +37,7 @@ func TestRequestFromReader_EOF(t *testing.T) {
 
 func TestRequestFromReader_ParsesRequestLineGet(t *testing.T) {
 	reader := &chunkReader{
-		data: "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
 	r, err := RequestFromReader(reader)
@@ -50,7 +50,7 @@ func TestRequestFromReader_ParsesRequestLineGet(t *testing.T) {
 
 func TestRequestFromReader_ParsesRequestLineWithPath(t *testing.T) {
 	reader := &chunkReader{
-		data: "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 1,
 	}
 	r, err := RequestFromReader(reader)
@@ -63,7 +63,7 @@ func TestRequestFromReader_ParsesRequestLineWithPath(t *testing.T) {
 
 func TestRequestFromReader_ParsesRequestLineWithPathPost(t *testing.T) {
 	reader := &chunkReader{
-		data: "POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 80,
 	}
 	r, err := RequestFromReader(reader)
@@ -76,7 +76,7 @@ func TestRequestFromReader_ParsesRequestLineWithPathPost(t *testing.T) {
 
 func TestRequestFromReader_RaisesErrorIfPartMissing(t *testing.T) {
 	reader := &chunkReader{
-		data: "/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 4,
 	}
 	_, err := RequestFromReader(reader)
@@ -86,7 +86,7 @@ func TestRequestFromReader_RaisesErrorIfPartMissing(t *testing.T) {
 
 func TestRequestFromReader_RaisesErrorIfMethodInvalid(t *testing.T) {
 	reader := &chunkReader{
-		data: "BLA /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "BLA /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 12,
 	}
 	_, err := RequestFromReader(reader)
@@ -96,7 +96,7 @@ func TestRequestFromReader_RaisesErrorIfMethodInvalid(t *testing.T) {
 
 func TestRequestFromReader_RaisesErrorIfVersionUnsupported(t *testing.T) {
 	reader := &chunkReader{
-		data: "GET /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		data:            "GET /coffee HTTP/2.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 5,
 	}
 	_, err := RequestFromReader(reader)
@@ -104,3 +104,25 @@ func TestRequestFromReader_RaisesErrorIfVersionUnsupported(t *testing.T) {
 	require.EqualError(t, err, "HTTP Version is unsupported: 2.1\n")
 }
 
+func TestRequestFromReader_ParsesHeaders(t *testing.T) {
+	reader := &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "localhost:42069", r.Headers["host"])
+	assert.Equal(t, "curl/7.81.0", r.Headers["user-agent"])
+	assert.Equal(t, "*/*", r.Headers["accept"])
+}
+
+func TestRequestFromReader_MalformedHeader(t *testing.T) {
+	reader := &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	_, err := RequestFromReader(reader)
+	require.Error(t, err)
+	require.EqualError(t, err, "Invalid header key: key contains invalid char  ")
+}

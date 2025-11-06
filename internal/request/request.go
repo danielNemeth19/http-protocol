@@ -2,6 +2,7 @@ package request
 
 import (
 	"fmt"
+	"github.com/danielNemeth19/http-protocol/internal/headers"
 	"io"
 	"slices"
 	"strings"
@@ -25,6 +26,7 @@ var methods = []string{
 
 type Request struct {
 	RequestLine RequestLine
+	Headers     headers.Headers
 	state       parseState
 }
 
@@ -38,21 +40,40 @@ type parseState int
 
 const (
 	initialized parseState = iota
-	done
+	requestStateParsingHeaders
+	requestStateDone
 )
 
 func (r *Request) parse(data []byte) (int, error) {
-	if r.state == done {
+	totalConsumed := 0
+	if r.state == requestStateDone {
 		return 0, fmt.Errorf("Error: trying to read data in done state")
 	}
-	line, n, err := parseRequestLine(data)
-	if err != nil {
-		return 0, err
-	}
-	if line != nil {
-		r.RequestLine = *line
-		r.state = done
-		return n, err
+	switch r.state {
+	case initialized:
+		line, n, err := parseRequestLine(data)
+		if err != nil {
+			return 0, err
+		}
+		if line != nil {
+			r.RequestLine = *line
+			r.state = requestStateParsingHeaders
+			totalConsumed += n
+			return totalConsumed, err
+		}
+		return 0, nil
+	case requestStateParsingHeaders:
+		n, done, err := r.Headers.Parse(data)
+		if err != nil {
+			return 0, err
+		}
+		if !done {
+			totalConsumed += n
+			return totalConsumed, err
+		}
+		r.state = requestStateDone
+		totalConsumed += n
+		return totalConsumed, err
 	}
 	return 0, nil
 }
@@ -88,8 +109,8 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
 	buf := make([]byte, bufferSize)
-	req := Request{state: initialized}
-	for req.state != done {
+	req := Request{state: initialized, Headers: headers.NewHeaders()}
+	for req.state != requestStateDone {
 		if readToIndex >= cap(buf) {
 			newBuf := make([]byte, 2*cap(buf))
 			copy(newBuf, buf[:readToIndex])
@@ -97,7 +118,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		n, err := reader.Read(buf[readToIndex:])
 		if err == io.EOF {
-			req.state = done
+			req.state = requestStateDone
 			break
 		} else if err != nil {
 			return nil, err
