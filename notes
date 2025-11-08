@@ -32,11 +32,48 @@ curl http://localhost:42069/coffee
 - the request will hang since TCP listener only listens but request will come in
 
 
-Requests: HTTP POST
-
 ------
 Debug:
 to run a test with dlv:
 dlv test ./internal/request/ -- -test.run TestRequestFromReader_EOF
 set breakpoint:
 break ./internal/request/request.go:96
+
+
+Explanations:
+- reading from a network is the same concept as reading from a file, difference is:
+    - from a file, we 'pull' data (we determine how much we read from the file)
+    - but we get pushed data from an internet connection - and we need to be able to handle incoming bytes
+- the main thing: the interface is the same
+- both a file and a stream of data, is just a stream of ordered bytes
+
+RequestFromReader key concepts:
+- buf with an initital capacity setup to hold data that we read in
+    - in tests, through the numBytesPerRead struct field, the chunkReader can mimic the network, sending arbitrary amount of bytes
+- we need to track the amount of bytes that we read from the stream (readToIndex)
+- if this goes above the capacity of the buffer:
+    - we create new buffer with capacity 2*cap(buf)
+    - and copy bytes already in buffer (i.e. read but not parsed yet) to the new buffer
+- on every read, we always read from the position of readToIndex:
+    - this is to make sure that we don't override bytes that we already read but haven't parsed yet
+    - (see remainderBytes about this later)
+- after we read:
+    - we increase readToIndex with the number of bytes read
+    - we call parse passing in the data, which is whatever we have in the buffer up to readIndex (can be some garbage bytes after the index)
+- parse will return parsedBytes or an error:
+    - it only returns non-null parsedBytes, if it was able to parse anything from the last chunk of bytes we read
+    - this could be the requestLine or header(s) or body
+    - if there's anything parsed:
+        - we need to check if there's any part of the read bytes, that is not parsed yet
+        - i.e is readToIndex - parsedBytes greater than 0?
+        - e.g.: we read 8 bytes in the last chunk:
+            - out of which the first 3 completes the request line -> this is parsed
+            - but the remaining 5 bytes will need to be carried over for subsequent reading and parsing
+        - so whatever is still left to be parsed:
+            - gets copied to the start of the buffer
+            - bytes not impacted b the copy will stay in the buffer, in this example after buf[5:]
+        - so to be clear:
+            - we don't flush the buffer entirely
+            - we just save unparsed but read data to the start of it
+            - and we re-set readToIndex to be at remainderBytes, so that we continue to read from the stream from this position
+

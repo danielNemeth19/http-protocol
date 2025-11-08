@@ -44,11 +44,7 @@ const (
 	requestStateDone
 )
 
-func (r *Request) parse(data []byte) (int, error) {
-	totalConsumed := 0
-	if r.state == requestStateDone {
-		return 0, fmt.Errorf("Error: trying to read data in done state")
-	}
+func (r *Request) parseSingle(data []byte) (int, error) {
 	switch r.state {
 	case initialized:
 		line, n, err := parseRequestLine(data)
@@ -58,8 +54,7 @@ func (r *Request) parse(data []byte) (int, error) {
 		if line != nil {
 			r.RequestLine = *line
 			r.state = requestStateParsingHeaders
-			totalConsumed += n
-			return totalConsumed, err
+			return n, err
 		}
 		return 0, nil
 	case requestStateParsingHeaders:
@@ -68,12 +63,28 @@ func (r *Request) parse(data []byte) (int, error) {
 			return 0, err
 		}
 		if !done {
-			totalConsumed += n
-			return totalConsumed, err
+			return n, err
 		}
 		r.state = requestStateDone
-		totalConsumed += n
-		return totalConsumed, err
+		return n, err
+	}
+	return 0, fmt.Errorf("Not sure what's going on")
+}
+
+func (r *Request) parse(data []byte) (int, error) {
+	totalParsed := 0
+	if r.state == requestStateDone {
+		return 0, fmt.Errorf("Error: trying to read data in done state")
+	}
+	for r.state != requestStateDone {
+		n, err := r.parseSingle(data[totalParsed:])
+		if err != nil {
+			return 0, fmt.Errorf("Error during parsing")
+		}
+		totalParsed += n
+		if totalParsed != 0 {
+			return totalParsed, nil
+		}
 	}
 	return 0, nil
 }
@@ -125,6 +136,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		readToIndex += n
 		parsedBytes, err := req.parse(buf[:readToIndex])
+		fmt.Printf("Read: %d -- parsed: %d\n", readToIndex, parsedBytes)
 		if err != nil {
 			return nil, err
 		}
