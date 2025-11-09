@@ -28,6 +28,10 @@ func main() {
 			request.RequestLine.RequestTarget,
 			request.RequestLine.HttpVersion,
 		)
+		fmt.Println("Headers:")
+		for k, v := range request.Headers {
+			fmt.Printf(" - %s: %s\n", k, v)
+		}
 		fmt.Println("Connection closed")
 	}
 }

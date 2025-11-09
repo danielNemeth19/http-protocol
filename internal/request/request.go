@@ -79,21 +79,21 @@ func (r *Request) parse(data []byte) (int, error) {
 	for r.state != requestStateDone {
 		n, err := r.parseSingle(data[totalParsed:])
 		if err != nil {
-			return 0, fmt.Errorf("Error during parsing")
+			return 0, fmt.Errorf("Error during parsing: %s", err)
+		}
+		if n == 0 {
+			break
 		}
 		totalParsed += n
-		if totalParsed != 0 {
-			return totalParsed, nil
-		}
 	}
-	return 0, nil
+	return totalParsed, nil
 }
 
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	var reqLine RequestLine
 
 	data := strings.Split(string(b), EndLine)
-	if len(data) != 2 {
+	if len(data) == 1 {
 		return nil, 0, nil
 	}
 
@@ -136,7 +136,6 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		readToIndex += n
 		parsedBytes, err := req.parse(buf[:readToIndex])
-		fmt.Printf("Read: %d -- parsed: %d\n", readToIndex, parsedBytes)
 		if err != nil {
 			return nil, err
 		}

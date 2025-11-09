@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-// TODO
+
 func TestValidSingleHeader(t *testing.T) {
 	headers := NewHeaders()
 	data := []byte("Host: localhost:42069\r\n\r\n")
