@@ -27,6 +27,7 @@ var methods = []string{
 type Request struct {
 	RequestLine RequestLine
 	Headers     headers.Headers
+	Body []byte
 	state       parseState
 }
 
