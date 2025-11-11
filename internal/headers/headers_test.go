@@ -117,3 +117,19 @@ func TestMultipleValueForSameKey(t *testing.T) {
 	assert.False(t, done)
 	assert.Equal(t, 25, n)
 }
+
+func TestHeaderGetKey(t *testing.T) {
+	headers := NewHeaders()
+	headers["host"] = "localhost:42069"
+	v := headers.Get("host")
+	assert.Equal(t, "localhost:42069", v)
+
+	v = headers.Get("HOST")
+	assert.Equal(t, "localhost:42069", v)
+}
+
+func TestHeaderGetKeyEmpty(t *testing.T) {
+	headers := NewHeaders()
+	v := headers.Get("other")
+	assert.Equal(t, "", v)
+}

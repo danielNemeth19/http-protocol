@@ -1,14 +1,17 @@
 package request
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/danielNemeth19/http-protocol/internal/headers"
 	"io"
 	"slices"
+	"strconv"
 	"strings"
+
+	"github.com/danielNemeth19/http-protocol/internal/headers"
 )
 
-const EndLine = "\r\n"
+var endLine = []byte("\r\n")
 
 const bufferSize = 8
 
@@ -27,7 +30,7 @@ var methods = []string{
 type Request struct {
 	RequestLine RequestLine
 	Headers     headers.Headers
-	Body []byte
+	Body        []byte
 	state       parseState
 }
 
@@ -42,6 +45,7 @@ type parseState int
 const (
 	initialized parseState = iota
 	requestStateParsingHeaders
+	requestStateParsingBody
 	requestStateDone
 )
 
@@ -66,8 +70,20 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		if !done {
 			return n, err
 		}
-		r.state = requestStateDone
+		// r.state = requestStateParsingBody
+		contentLength := r.Headers.Get("content-length")
+		if contentLength == "" {
+			r.state = requestStateDone
+		} else {
+			length, err := strconv.Atoi(contentLength)
+			if err != nil {
+				return 0, err
+			}
+			r.state = requestStateParsingBody
+		}
 		return n, err
+	case requestStateParsingBody:
+		fmt.Printf("length is: %d\n", len(data))
 	}
 	return 0, fmt.Errorf("Not sure what's going on")
 }
@@ -93,13 +109,13 @@ func (r *Request) parse(data []byte) (int, error) {
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	var reqLine RequestLine
 
-	data := strings.Split(string(b), EndLine)
-	if len(data) == 1 {
+	endLineSep := bytes.Index(b, endLine)
+	if endLineSep == -1 {
 		return nil, 0, nil
 	}
 
-	line := data[0]
-	parts := strings.Split(line, " ")
+	line := b[:endLineSep]
+	parts := strings.Split(string(line), " ")
 	if len(parts) != 3 {
 		return nil, 0, fmt.Errorf("Request line supposed to have three parts, got: %d\n", len(parts))
 	}
@@ -115,7 +131,7 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	reqLine.Method = method
 	reqLine.RequestTarget = target
 	reqLine.HttpVersion = version
-	return &reqLine, len(line) + len(EndLine), nil
+	return &reqLine, len(line) + len(endLine), nil
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
