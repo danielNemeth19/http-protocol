@@ -70,20 +70,29 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		if !done {
 			return n, err
 		}
-		// r.state = requestStateParsingBody
+		r.state = requestStateParsingBody
+		return n, err
+	case requestStateParsingBody:
 		contentLength := r.Headers.Get("content-length")
 		if contentLength == "" {
 			r.state = requestStateDone
+			return 0, nil
 		} else {
 			length, err := strconv.Atoi(contentLength)
 			if err != nil {
 				return 0, err
 			}
-			r.state = requestStateParsingBody
+			r.Body = append(r.Body, data...)
+			if len(r.Body) == length {
+				r.state = requestStateDone
+			}
+			if len(r.Body) > length {
+				fmt.Println(len(r.Body), length)
+				// r.state = requestStateDone
+				return 0, fmt.Errorf("Length of body (%d) is greater then the Content-Length (%d)", len(r.Body), length)
+			}
+			return len(data), nil
 		}
-		return n, err
-	case requestStateParsingBody:
-		fmt.Printf("length is: %d\n", len(data))
 	}
 	return 0, fmt.Errorf("Not sure what's going on")
 }
