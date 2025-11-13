@@ -77,22 +77,24 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		if contentLength == "" {
 			r.state = requestStateDone
 			return 0, nil
-		} else {
-			length, err := strconv.Atoi(contentLength)
-			if err != nil {
-				return 0, err
-			}
-			r.Body = append(r.Body, data...)
-			if len(r.Body) == length {
-				r.state = requestStateDone
-			}
-			if len(r.Body) > length {
-				fmt.Println(len(r.Body), length)
-				// r.state = requestStateDone
-				return 0, fmt.Errorf("Length of body (%d) is greater then the Content-Length (%d)", len(r.Body), length)
-			}
-			return len(data), nil
 		}
+		length, err := strconv.Atoi(contentLength)
+		if err != nil {
+			return 0, err
+		}
+		fmt.Printf("body before: %s\n", string(r.Body))
+		fmt.Printf("data: %s\n", string(data))
+		r.Body = append(r.Body, data...)
+		fmt.Printf("body after: %s\n", string(r.Body))
+		if len(r.Body) > length {
+			fmt.Println(len(r.Body), length)
+			return 0, fmt.Errorf("Length of body (%d) is greater then the Content-Length (%d)", len(r.Body), length)
+		}
+		if len(r.Body) == length {
+			r.state = requestStateDone
+			return length, nil
+		}
+		return len(data), nil
 	}
 	return 0, fmt.Errorf("Not sure what's going on")
 }
@@ -112,6 +114,7 @@ func (r *Request) parse(data []byte) (int, error) {
 		}
 		totalParsed += n
 	}
+	fmt.Printf("totalParsed: %d\n", totalParsed)
 	return totalParsed, nil
 }
 
