@@ -82,17 +82,14 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		fmt.Printf("body before: %s\n", string(r.Body))
-		fmt.Printf("data: %s\n", string(data))
 		r.Body = append(r.Body, data...)
-		fmt.Printf("body after: %s\n", string(r.Body))
 		if len(r.Body) > length {
-			fmt.Println(len(r.Body), length)
+			r.state = requestStateDone
 			return 0, fmt.Errorf("Length of body (%d) is greater then the Content-Length (%d)", len(r.Body), length)
 		}
 		if len(r.Body) == length {
 			r.state = requestStateDone
-			return length, nil
+			return len(data), nil
 		}
 		return len(data), nil
 	}
@@ -114,7 +111,6 @@ func (r *Request) parse(data []byte) (int, error) {
 		}
 		totalParsed += n
 	}
-	fmt.Printf("totalParsed: %d\n", totalParsed)
 	return totalParsed, nil
 }
 
@@ -158,8 +154,8 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		n, err := reader.Read(buf[readToIndex:])
 		if err == io.EOF {
-			req.state = requestStateDone
-			break
+			// req.state = requestStateDone
+			return nil, fmt.Errorf("Trying to read")
 		} else if err != nil {
 			return nil, err
 		}
