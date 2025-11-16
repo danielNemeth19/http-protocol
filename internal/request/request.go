@@ -154,8 +154,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		n, err := reader.Read(buf[readToIndex:])
 		if err == io.EOF {
-			// req.state = requestStateDone
-			return nil, fmt.Errorf("Trying to read")
+			return nil, fmt.Errorf("EOF hit before parsed request")
 		} else if err != nil {
 			return nil, err
 		}

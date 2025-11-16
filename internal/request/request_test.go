@@ -31,9 +31,9 @@ func TestRequestFromReader_EOF(t *testing.T) {
 		numBytesPerRead: 3,
 	}
 	r, err := RequestFromReader(reader)
-	require.NoError(t, err)
-	require.NotNil(t, r)
-	assert.Equal(t, r.RequestLine, RequestLine{})
+	require.Error(t, err)
+	require.EqualError(t, err, "EOF hit before parsed request")
+	require.Nil(t, r)
 }
 
 func TestRequestFromReader_ParsesRequestLineGet(t *testing.T) {
@@ -172,11 +172,8 @@ func TestRequestFromReader_MissingEndOfHeaders(t *testing.T) {
 	}
 	r, err := RequestFromReader(reader)
 	require.Error(t, err)
+	require.EqualError(t, err, "EOF hit before parsed request")
 	require.Nil(t, r)
-	// assert.Equal(t, "GET", r.RequestLine.Method)
-	// assert.Equal(t, "/", r.RequestLine.RequestTarget)
-	// assert.Equal(t, "1.1", r.RequestLine.HttpVersion)
-	// assert.Equal(t, "keep-alive", r.Headers["connection"])
 }
 
 func TestRequestFromReader_StandardBody(t *testing.T) {
@@ -194,6 +191,33 @@ func TestRequestFromReader_StandardBody(t *testing.T) {
 	assert.Equal(t, "hello world!\n", string(r.Body))
 }
 
+func TestRequestFromReader_EmptyBody0ContentLength(t *testing.T) {
+	reader := &chunkReader{
+		data: "POST /submit HTTP/1.1\r\n" +
+			"Host: localhost:42069\r\n" +
+			"Content-Length: 0\r\n" +
+			"\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "", string(r.Body))
+}
+
+func TestRequestFromReader_EmptyBodyNoReportedContentLength(t *testing.T) {
+	reader := &chunkReader{
+		data: "POST /submit HTTP/1.1\r\n" +
+			"Host: localhost:42069\r\n" +
+			"\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "", string(r.Body))
+}
+
 func TestRequestFromReader_BodyShorterThanReportContentLength(t *testing.T) {
 	reader := &chunkReader{
 		data: "POST /submit HTTP/1.1\r\n" +
@@ -205,5 +229,20 @@ func TestRequestFromReader_BodyShorterThanReportContentLength(t *testing.T) {
 	}
 	r, err := RequestFromReader(reader)
 	require.Error(t, err)
+	require.EqualError(t, err, "EOF hit before parsed request")
 	require.Nil(t, r)
+}
+
+func TestRequestFromReader_NonContentLengthWithBody(t *testing.T) {
+	reader := &chunkReader{
+		data: "POST /submit HTTP/1.1\r\n" +
+			"Host: localhost:42069\r\n" +
+			"\r\n" +
+			"hello world!\n",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "hello world!\n", string(r.Body))
 }
