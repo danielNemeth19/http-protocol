@@ -6,7 +6,6 @@ import (
 	"net"
 )
 
-
 func main() {
 	listener, err := net.Listen("tcp", ":42069")
 	if err != nil {
@@ -32,6 +31,8 @@ func main() {
 		for k, v := range request.Headers {
 			fmt.Printf(" - %s: %s\n", k, v)
 		}
+		fmt.Println("Body:")
+		fmt.Println(string(request.Body))
 		fmt.Println("Connection closed")
 	}
 }

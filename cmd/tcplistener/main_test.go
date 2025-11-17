@@ -69,7 +69,7 @@ func TestParsingHTTPPost(t *testing.T) {
 			"User-Agent: curl/8.16.0",
 			"Accept: */*",
 			"Content-Type: application/json",
-			"Content-Length: 22",
+			"Content-Length: 23",
 		},
 		Body: "{\"flavor\": \"dark mode\"}",
 	}
