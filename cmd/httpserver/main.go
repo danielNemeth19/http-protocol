@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"github.com/danielNemeth19/http-protocol/internal/server"
 )
 
 const port = 42069
