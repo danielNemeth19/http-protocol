@@ -1,38 +1,56 @@
 package server
 
 import (
+	"log"
 	"net"
 	"strconv"
+	"sync/atomic"
 )
 
 type Server struct {
-	state bool
+	listener   net.Listener
+	inShutdown atomic.Bool
 }
 
 func (s *Server) Close() error {
+	s.inShutdown.Store(true)
+	s.listener.Close()
 	return nil
 }
 
-func (s *Server) listen() error {
-	return nil
+func (s *Server) listen() {
+	for {
+		conn, err := s.listener.Accept()
+		if err != nil {
+			isShutdown := s.inShutdown.Load()
+			if isShutdown {
+				break
+			}
+			log.Printf("Error during accepting connection: %v\n", err)
+			continue
+		}
+		go s.handle(conn)
+	}
 }
 
 func (s *Server) handle(conn net.Conn) {
+	defer conn.Close()
 	response := []byte(
 		"HTTP/1.1 200 OK\r\n" +
-			"Content-Type: test/plain\r\n" +
+			"Content-Type: text/plain\r\n" +
 			"Content-Length: 13\r\n\r\n" +
-			"Hello World!",
+			"Hello World!\n",
 	)
 	conn.Write(response)
 }
 
 func Serve(port int) (*Server, error) {
-	server := Server{state: true}
 	address := ":" + strconv.Itoa(port)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, err
 	}
-	return &server, nil
+	server := &Server{listener: listener}
+	go server.listen()
+	return server, nil
 }
