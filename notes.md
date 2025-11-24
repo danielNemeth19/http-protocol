@@ -12,6 +12,55 @@
 - [RFC 7231](https://datatracker.ietf.org/doc/html/rfc7231) can be verbose; [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112) is concise but assumes familiarity with [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110).
 
 ---
+# HTTP message format
+
+An HTTP/1.1 message consists of:
+* a start-line followed by a CRLF and a sequence of octets (bytes) in a format similar to the Internet Message Format [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322):
+    * zero or more header field lines (collectively referred to as the "headers" or the "header section")
+    * an empty line indicating the end of the header section
+    * and an optional message body.
+
+``` markdown
+HTTP-message = start-line CRLF
+               *( field-line CRLF)
+               CRLF
+               [ message body ]
+
+```
+
+### ABNF Notation
+
+- **`SP`**: Space character (ASCII 0x20). Used to separate elements in a line.
+- **`CRLF`**: Carriage Return + Line Feed (`\r\n`). Standard line ending in HTTP.
+- **Square brackets `[ ... ]`**: Indicates the enclosed element is optional.
+- **Asterisk `*` before an element**: Zero or more repetitions of that element.
+
+These notations follow the Augmented Backus-Naur Form (ABNF) as defined in [RFC 5234](https://datatracker.ietf.org/doc/html/rfc5234) and referenced by [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#section-2.1).
+
+
+## Request
+
+TBD
+
+## Response
+
+For a response, the start-line is called `status-line`. From [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112):
+
+```markdown
+status-line = HTTP-version SP status-code SP [ reason phrase ]
+```
+
+For example:
+
+```markdown
+HTTP/1.1 200 OK
+```
+
+About the `reason phrase`, from [Section 4](https://datatracker.ietf.org/doc/html/rfc9112#name-status-line):
+
+A client SHOULD ignore the reason-phrase content because it is not a reliable channel for information (it might be translated for a given locale, overwritten by intermediaries, or discarded when the message is forwarded via other versions of HTTP). A server MUST send the space that separates the status-code from the reason-phrase even when the reason-phrase is absent (i.e., the status-line would end with the space)
+
+---
 # TCP Chapter
 
 ## Run TCP Listener and Redirect Output
