@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -132,4 +133,15 @@ func TestHeaderGetKeyEmpty(t *testing.T) {
 	headers := NewHeaders()
 	v := headers.Get("other")
 	assert.Equal(t, "", v)
+}
+
+func TestIter(t *testing.T) {
+	headers := NewHeaders()
+	headers["host"] = "localhost:42069"
+	headers["connection"] = "close"
+	headers["content-type"] = "json"
+	for i, k := range headers {
+		fmt.Println(i, k)
+	}
+
 }

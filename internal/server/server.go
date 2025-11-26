@@ -5,6 +5,8 @@ import (
 	"net"
 	"strconv"
 	"sync/atomic"
+
+	"github.com/danielNemeth19/http-protocol/internal/response"
 )
 
 type Server struct {
@@ -35,13 +37,16 @@ func (s *Server) listen() {
 
 func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
-	response := []byte(
-		"HTTP/1.1 200 OK\r\n" +
-			"Content-Type: text/plain\r\n" +
-			"Content-Length: 13\r\n\r\n" +
-			"Hello World!\n",
-	)
-	conn.Write(response)
+	// response := []byte(
+	// "HTTP/1.1 200 OK\r\n" +
+	// "Content-Type: text/plain\r\n" +
+	// "Content-Length: 13\r\n\r\n" +
+	// "Hello World!\n",
+	// )
+	// conn.Write(response)
+	response.WriteStatusLine(conn, 200)
+	headers := response.GetDefaultHeaders(13)
+	response.WriteHeaders(conn, headers)
 }
 
 func Serve(port int) (*Server, error) {
