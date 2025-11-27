@@ -37,16 +37,10 @@ func (s *Server) listen() {
 
 func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
-	// response := []byte(
-	// "HTTP/1.1 200 OK\r\n" +
-	// "Content-Type: text/plain\r\n" +
-	// "Content-Length: 13\r\n\r\n" +
-	// "Hello World!\n",
-	// )
-	// conn.Write(response)
-	response.WriteStatusLine(conn, 200)
-	headers := response.GetDefaultHeaders(13)
+	response.WriteStatusLine(conn, response.StatusOK)
+	headers := response.GetDefaultHeaders(0)
 	response.WriteHeaders(conn, headers)
+	conn.Write([]byte("\r\n"))
 }
 
 func Serve(port int) (*Server, error) {
