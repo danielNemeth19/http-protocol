@@ -20,14 +20,16 @@ type HandlerError struct {
 }
 
 func (h HandlerError) WriteError(w io.Writer) {
-	response.WriteStatusLine(w, response.StatusBadRequest)
-	headers := response.GetDefaultHeaders(0)
+	response.WriteStatusLine(w, h.Code)
+	headers := response.GetDefaultHeaders(len(h.Message))
 	response.WriteHeaders(w, headers)
 	w.Write([]byte("\r\n"))
+	w.Write([]byte(h.Message))
 }
 
 type Server struct {
 	listener   net.Listener
+	handler    Handler
 	inShutdown atomic.Bool
 }
 
@@ -37,7 +39,7 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) listen(handler Handler) {
+func (s *Server) listen() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
@@ -48,35 +50,29 @@ func (s *Server) listen(handler Handler) {
 			log.Printf("Error during accepting connection: %v\n", err)
 			continue
 		}
-		go s.handle(conn, handler)
+		go s.handle(conn)
 	}
 }
 
-func (s *Server) handle(conn net.Conn, handler Handler) {
+func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
 		errH := HandlerError{Message: err.Error(), Code: response.StatusBadRequest}
 		errH.WriteError(conn)
-	}
-	var buf bytes.Buffer
-	handlerError := handler(&buf, req)
-	if handlerError != nil {
-		response.WriteStatusLine(&buf, handlerError.Code)
-		headers := response.GetDefaultHeaders(len(handlerError.Message))
-		response.WriteHeaders(&buf, headers)
-		buf.Write([]byte("\r\n"))
-		buf.Write([]byte(handlerError.Message))
-		buf.WriteTo(conn)
 		return
 	}
-	var buf2 bytes.Buffer
-	response.WriteStatusLine(&buf2, response.StatusOK)
-	headers := response.GetDefaultHeaders(len(buf.String()))
-	response.WriteHeaders(&buf2, headers)
-	buf2.Write([]byte("\r\n"))
-	buf.WriteTo(&buf2)
-	buf2.WriteTo(conn)
+	var body bytes.Buffer
+	handlerError := s.handler(&body, req)
+	if handlerError != nil {
+		handlerError.WriteError(conn)
+		return
+	}
+	response.WriteStatusLine(conn, response.StatusOK)
+	headers := response.GetDefaultHeaders(body.Len())
+	response.WriteHeaders(conn, headers)
+	conn.Write([]byte("\r\n"))
+	body.WriteTo(conn)
 }
 
 func Serve(port int, handler Handler) (*Server, error) {
@@ -85,7 +81,10 @@ func Serve(port int, handler Handler) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	server := &Server{listener: listener}
-	go server.listen(handler)
+	server := &Server{
+		listener: listener,
+		handler:  handler,
+	}
+	go server.listen()
 	return server, nil
 }
