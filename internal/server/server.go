@@ -20,9 +20,10 @@ type HandlerError struct {
 }
 
 func (h HandlerError) WriteError(w io.Writer) {
-	response.WriteStatusLine(w, h.Code)
+	writer := response.Writer{Writer: w}
+	writer.WriteStatusLine(h.Code)
 	headers := response.GetDefaultHeaders(len(h.Message))
-	response.WriteHeaders(w, headers)
+	writer.WriteHeaders(headers)
 	w.Write([]byte("\r\n"))
 	w.Write([]byte(h.Message))
 }
@@ -68,9 +69,10 @@ func (s *Server) handle(conn net.Conn) {
 		handlerError.WriteError(conn)
 		return
 	}
-	response.WriteStatusLine(conn, response.StatusOK)
+	writer := response.Writer{Writer: conn}
+	writer.WriteStatusLine(response.StatusOK)
 	headers := response.GetDefaultHeaders(body.Len())
-	response.WriteHeaders(conn, headers)
+	writer.WriteHeaders(headers)
 	conn.Write([]byte("\r\n"))
 	body.WriteTo(conn)
 }
