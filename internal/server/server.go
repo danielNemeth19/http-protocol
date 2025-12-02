@@ -12,7 +12,7 @@ import (
 	"github.com/danielNemeth19/http-protocol/internal/response"
 )
 
-type Handler func(w io.Writer, req *request.Request) *HandlerError
+type Handler func(w *response.Writer, req *request.Request)
 
 type HandlerError struct {
 	Code    response.StatusCode
@@ -63,18 +63,9 @@ func (s *Server) handle(conn net.Conn) {
 		errH.WriteError(conn)
 		return
 	}
-	var body bytes.Buffer
-	handlerError := s.handler(&body, req)
-	if handlerError != nil {
-		handlerError.WriteError(conn)
-		return
-	}
-	writer := response.Writer{Writer: conn}
-	writer.WriteStatusLine(response.StatusOK)
-	headers := response.GetDefaultHeaders(body.Len())
-	writer.WriteHeaders(headers)
-	conn.Write([]byte("\r\n"))
-	body.WriteTo(conn)
+	var w bytes.Buffer
+	writer := response.Writer{Writer: &w}
+	s.handler(&writer, req)
 }
 
 func Serve(port int, handler Handler) (*Server, error) {

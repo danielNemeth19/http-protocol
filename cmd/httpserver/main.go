@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -14,27 +14,37 @@ import (
 
 const port = 42069
 
-func myHandler(w io.Writer, req *request.Request) *server.HandlerError {
-	target := req.RequestLine.RequestTarget 
+
+func myHandler(w *response.Writer, req *request.Request) {
+	target := req.RequestLine.RequestTarget
 	if target == "/yourproblem" {
 		resp := server.HandlerError{
-			Code: response.StatusBadRequest,
-			Message: "Your problem is not my problem\n",
+			Code:    response.StatusBadRequest,
+			Message: response.BadRequest,
 		}
-		return &resp
+		w.WriteStatusLine(resp.Code)
+		headers := response.GetDefaultHeaders(len(resp.Message))
+		w.WriteHeaders(headers)
+		w.WriteBody([]byte(resp.Message))
 	}
 	if target == "/myproblem" {
 		resp := server.HandlerError{
-			Code: response.StatusInternalServerError,
-			Message: "Woopsie, my bad\n",
+			Code:    response.StatusInternalServerError,
+			Message: response.InternalServerError,
 		}
-		return &resp
+		w.WriteStatusLine(resp.Code)
+		headers := response.GetDefaultHeaders(len(resp.Message))
+		w.WriteHeaders(headers)
+		w.WriteBody([]byte(resp.Message))
 	}
-	w.Write([]byte("All good, frfr\n"))
-	return nil
+	w.WriteStatusLine(response.StatusOK)
+	headers := response.GetDefaultHeaders(len(response.SuccessHTML))
+	fmt.Println(headers)
+	w.WriteHeaders(headers)
+	w.WriteBody([]byte(response.SuccessHTML))
 }
 
-func main()  {
+func main() {
 	server, err := server.Serve(port, myHandler)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
