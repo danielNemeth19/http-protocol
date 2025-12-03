@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"io"
 	"log"
 	"net"
@@ -63,8 +62,7 @@ func (s *Server) handle(conn net.Conn) {
 		errH.WriteError(conn)
 		return
 	}
-	var w bytes.Buffer
-	writer := response.Writer{Writer: &w}
+	writer := response.Writer{Writer: conn}
 	s.handler(&writer, req)
 }
 

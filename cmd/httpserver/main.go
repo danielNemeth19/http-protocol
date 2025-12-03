@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -20,26 +19,28 @@ func myHandler(w *response.Writer, req *request.Request) {
 	if target == "/yourproblem" {
 		resp := server.HandlerError{
 			Code:    response.StatusBadRequest,
-			Message: response.BadRequest,
+			Message: response.BadRequestHTML,
 		}
 		w.WriteStatusLine(resp.Code)
 		headers := response.GetDefaultHeaders(len(resp.Message))
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
+		return
 	}
 	if target == "/myproblem" {
 		resp := server.HandlerError{
 			Code:    response.StatusInternalServerError,
-			Message: response.InternalServerError,
+			Message: response.InternalServerErrorHTML,
 		}
 		w.WriteStatusLine(resp.Code)
 		headers := response.GetDefaultHeaders(len(resp.Message))
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
+		return
 	}
 	w.WriteStatusLine(response.StatusOK)
 	headers := response.GetDefaultHeaders(len(response.SuccessHTML))
-	fmt.Println(headers)
+	headers = response.ReplaceHeader(map[string]string{"Content-Type": "text/html"}, headers)
 	w.WriteHeaders(headers)
 	w.WriteBody([]byte(response.SuccessHTML))
 }

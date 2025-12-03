@@ -1,6 +1,7 @@
 package response
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 
@@ -15,7 +16,7 @@ const (
 	StatusInternalServerError StatusCode = 500
 )
 
-var BadRequest = `<html>
+var BadRequestHTML = `<html>
   <head>
     <title>400 Bad Request</title>
   </head>
@@ -26,7 +27,7 @@ var BadRequest = `<html>
 </html>
 `
 
-var InternalServerError = `<html>
+var InternalServerErrorHTML = `<html>
   <head>
     <title>500 Internal Server Error</title>
   </head>
@@ -48,28 +49,47 @@ var SuccessHTML = `<html>
 </html>
 `
 
+type writeState int
+
+const (
+	initalized writeState = iota
+	writeStateHeaders
+	writeStateBody
+)
+
 type Writer struct {
 	Writer io.Writer
+	state  writeState
 }
 
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+	if w.state != initalized {
+		return fmt.Errorf("Writer expected to be initialized, got: %s", w.state)
+	}
+	var statusLine string
 	switch statusCode {
 	case StatusOK:
-		w.Writer.Write([]byte("HTTP/1.1 200 OK\r\n"))
-		return nil
+		statusLine = "HTTP/1.1 200 OK\r\n"
 	case StatusBadRequest:
-		w.Writer.Write([]byte("HTTP/1.1 400 Bad Request\r\n"))
-		return nil
+		statusLine = "HTTP/1.1 400 Bad Request\r\n"
 	case StatusInternalServerError:
-		w.Writer.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n"))
-		return nil
+		statusLine = "HTTP/1.1 500 Internal Server Error\r\n"
 	default:
-		w.Writer.Write([]byte(""))
-		return nil
+		return fmt.Errorf("Unrecognized status code: %d\n", statusCode)
 	}
+	_, err := w.Writer.Write([]byte(statusLine))
+	if err != nil {
+		return err
+	}
+	w.state = writeStateHeaders
+	return nil
 }
 
 func (w *Writer) WriteHeaders(headers headers.Headers) error {
+	if w.state != writeStateStatusLine {
+		return fmt.Errorf("Writer expected to be initialized, got: %s", w.state)
+	}
+	w.state = writeStateStatusLine
 	for k, v := range headers {
 		data := k + ": " + v + "\r\n"
 		w.Writer.Write([]byte(data))
@@ -87,6 +107,15 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 	headers := headers.NewHeaders()
 	headers.Set("Content-Length", strconv.Itoa(contentLen))
 	headers.Set("Connection", "close")
-	headers.Set("Content-Type", "text/html")
+	headers.Set("Content-Type", "text/plain")
+	return headers
+}
+
+func ReplaceHeader(header, headers headers.Headers) headers.Headers {
+	for key, value := range header {
+		if _, exists := headers[key]; exists {
+			headers[key] = value
+		}
+	}
 	return headers
 }
