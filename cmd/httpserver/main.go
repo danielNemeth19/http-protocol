@@ -13,7 +13,6 @@ import (
 
 const port = 42069
 
-
 func myHandler(w *response.Writer, req *request.Request) {
 	target := req.RequestLine.RequestTarget
 	if target == "/yourproblem" {
@@ -23,6 +22,7 @@ func myHandler(w *response.Writer, req *request.Request) {
 		}
 		w.WriteStatusLine(resp.Code)
 		headers := response.GetDefaultHeaders(len(resp.Message))
+		headers = response.ReplaceHeader(map[string]string{"Content-Type": "text/html"}, headers)
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
 		return
@@ -34,6 +34,7 @@ func myHandler(w *response.Writer, req *request.Request) {
 		}
 		w.WriteStatusLine(resp.Code)
 		headers := response.GetDefaultHeaders(len(resp.Message))
+		headers = response.ReplaceHeader(map[string]string{"Content-Type": "text/html"}, headers)
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
 		return

@@ -55,6 +55,7 @@ const (
 	initalized writeState = iota
 	writeStateHeaders
 	writeStateBody
+	done
 )
 
 type Writer struct {
@@ -64,7 +65,7 @@ type Writer struct {
 
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	if w.state != initalized {
-		return fmt.Errorf("Writer expected to be initialized, got: %s", w.state)
+		return fmt.Errorf("Writer expected to be initialized, got: %d", w.state)
 	}
 	var statusLine string
 	switch statusCode {
@@ -86,20 +87,24 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 }
 
 func (w *Writer) WriteHeaders(headers headers.Headers) error {
-	if w.state != writeStateStatusLine {
-		return fmt.Errorf("Writer expected to be initialized, got: %s", w.state)
+	if w.state != writeStateHeaders {
+		return fmt.Errorf("Writer expected to be in writeStateHeaders, got: %d", w.state)
 	}
-	w.state = writeStateStatusLine
 	for k, v := range headers {
 		data := k + ": " + v + "\r\n"
 		w.Writer.Write([]byte(data))
 	}
 	w.Writer.Write([]byte("\r\n"))
+	w.state = writeStateBody
 	return nil
 }
 
 func (w *Writer) WriteBody(p []byte) (int, error) {
+	if w.state != writeStateBody {
+		return 0, fmt.Errorf("Writer expected to be in writeStateBody state, got: %d", w.state)
+	}
 	w.Writer.Write(p)
+	w.state = done
 	return len(p), nil
 }
 
