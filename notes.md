@@ -60,6 +60,44 @@ About the `reason phrase`, from [Section 4](https://datatracker.ietf.org/doc/htm
 
 A client SHOULD ignore the reason-phrase content because it is not a reliable channel for information (it might be translated for a given locale, overwritten by intermediaries, or discarded when the message is forwarded via other versions of HTTP). A server MUST send the space that separates the status-code from the reason-phrase even when the reason-phrase is absent (i.e., the status-line would end with the space)
 
+
+## Chunked Encoding
+
+The HTTP `Transfer-Encoding` request and response header specifies the form of encoding used to transfer messages between nodes on the network.
+
+Turns out `[ message body ]` can contain a variable length of data, known only as its sent by making use of the `Transfer-Encoding` header rather than the `Content-Length` header.
+
+Here's the format:
+```
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+<n>\r\n
+<data of length n>\r\n
+<n>\r\n
+<data of length n>\r\n
+<n>\r\n
+<data of length n>\r\n
+... repeat ...
+0\r\n
+\r\n
+```
+
+Where:
+* `<n>` is just a hexidecimal number indicating the size of the chunk in bytes
+* and `<data of length n>` is the actual data for that chunk.
+
+The pattern can be repeated as many times as necessary to send the entire message body. 
+
+### Directives
+Data is sent in series of chunks. Content can be sent in streams of unknown size to be tranferred as a sequence of length-delimited buffers, so the sender can keep a connection open, and let the recepient know when it has received the entire message.
+
+Chunked encoding is most often used for:
+* Streaming large amounts of data (like big files)
+* Real-time updates (like a chat-style application)
+* Sending data of unknown size (like a live feed)
+
 ---
 # TCP Chapter
 
