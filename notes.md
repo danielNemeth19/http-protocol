@@ -91,7 +91,10 @@ Where:
 The pattern can be repeated as many times as necessary to send the entire message body. 
 
 ### Directives
-Data is sent in series of chunks. Content can be sent in streams of unknown size to be tranferred as a sequence of length-delimited buffers, so the sender can keep a connection open, and let the recepient know when it has received the entire message.
+Data is sent in series of chunks. Content can be sent in streams of unknown size to be tranferred as a sequence of length-delimited buffers,
+so the sender can keep a connection open, and let the recepient know when it has received the entire message.
+The `Content-Length` header must be omitted, and at the begining of each chunk, a string of hex digits indicates the size of the chunk-data in octets, followed by `\r\n` and
+then the chunk itself, followed by another `\r\n`. The terminating chunk is a zero-length chunk.
 
 Chunked encoding is most often used for:
 * Streaming large amounts of data (like big files)

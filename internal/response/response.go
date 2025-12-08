@@ -108,6 +108,14 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	return 0, nil
+}
+
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	return 0, nil
+}
+
 func GetDefaultHeaders(contentLen int) headers.Headers {
 	headers := headers.NewHeaders()
 	headers.Set("Content-Length", strconv.Itoa(contentLen))

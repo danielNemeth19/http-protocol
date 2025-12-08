@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/danielNemeth19/http-protocol/internal/request"
@@ -37,6 +41,17 @@ func myHandler(w *response.Writer, req *request.Request) {
 		headers = response.ReplaceHeader(map[string]string{"Content-Type": "text/html"}, headers)
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
+		return
+	}
+	toGet, found := strings.CutPrefix(target, "/httpbin")
+	if found {
+		fmt.Printf("To target: %s\n", toGet)
+		resp, _ := http.Get("https://httpbin.org/" + toGet)
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return
+		}
+		fmt.Printf("Answer:\n%s\n", data)
 		return
 	}
 	w.WriteStatusLine(response.StatusOK)
