@@ -109,10 +109,18 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 }
 
 func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	hexa := fmt.Sprintf("%X", len(p))
+	w.Writer.Write([]byte(hexa))
+	w.Writer.Write([]byte("\r\n"))
+	w.Writer.Write(p)
+	w.Writer.Write([]byte("\r\n"))
 	return 0, nil
 }
 
 func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	w.Writer.Write([]byte(fmt.Sprintf("%X", 0)))
+	w.Writer.Write([]byte("\r\n"))
+	w.Writer.Write([]byte("\r\n"))
 	return 0, nil
 }
 
@@ -121,6 +129,13 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 	headers.Set("Content-Length", strconv.Itoa(contentLen))
 	headers.Set("Connection", "close")
 	headers.Set("Content-Type", "text/plain")
+	return headers
+}
+
+func GetChunkedHeaders() headers.Headers {
+	headers := headers.NewHeaders()
+	headers.Set("Content-Type", "text/plain")
+	headers.Set("Transfer-Encoding", "chunked")
 	return headers
 }
 

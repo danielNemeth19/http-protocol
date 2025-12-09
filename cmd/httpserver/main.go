@@ -51,7 +51,11 @@ func myHandler(w *response.Writer, req *request.Request) {
 		if err != nil {
 			return
 		}
-		fmt.Printf("Answer:\n%s\n", data)
+		w.WriteStatusLine(response.StatusOK)
+		headers := response.GetChunkedHeaders()
+		w.WriteHeaders(headers)
+		w.WriteChunkedBody(data)
+		w.WriteChunkedBodyDone()
 		return
 	}
 	w.WriteStatusLine(response.StatusOK)
