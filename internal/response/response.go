@@ -109,18 +109,32 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 }
 
 func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
-	hexa := fmt.Sprintf("%X", len(p))
-	w.Writer.Write([]byte(hexa))
-	w.Writer.Write([]byte("\r\n"))
-	w.Writer.Write(p)
-	w.Writer.Write([]byte("\r\n"))
-	return 0, nil
+	if w.state != writeStateBody {
+		return 0, fmt.Errorf("Writer expected to be in writeStateBody state, got: %d", w.state)
+	}
+
+	if _, err := fmt.Fprintf(w.Writer, "%X\r\n", len(p)); err != nil {
+		return 0, err
+	}
+
+	n, err := w.Writer.Write(p)
+	if err != nil {
+		return 0, err
+	}
+
+	if _, err := fmt.Fprintf(w.Writer, "\r\n"); err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }
 
 func (w *Writer) WriteChunkedBodyDone() (int, error) {
-	w.Writer.Write([]byte(fmt.Sprintf("%X", 0)))
-	w.Writer.Write([]byte("\r\n"))
-	w.Writer.Write([]byte("\r\n"))
+	if w.state != writeStateBody {
+		return 0, fmt.Errorf("Writer expected to be in writeStateBody state, got: %d", w.state)
+	}
+	fmt.Fprintf(w.Writer, "0\r\n\r\n")
+	w.state = done
 	return 0, nil
 }
 

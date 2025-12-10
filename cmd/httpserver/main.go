@@ -45,18 +45,31 @@ func myHandler(w *response.Writer, req *request.Request) {
 	}
 	toGet, found := strings.CutPrefix(target, "/httpbin")
 	if found {
-		fmt.Printf("To target: %s\n", toGet)
-		resp, _ := http.Get("https://httpbin.org/" + toGet)
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return
-		}
+		toTarget := "https://httpbin.org" + toGet
+		resp, _ := http.Get(toTarget)
 		w.WriteStatusLine(response.StatusOK)
 		headers := response.GetChunkedHeaders()
 		w.WriteHeaders(headers)
-		w.WriteChunkedBody(data)
-		w.WriteChunkedBodyDone()
-		return
+		buf := make([]byte, 1024)
+		for {
+			n, err := resp.Body.Read(buf)
+			if err == io.EOF {
+				if n > 0 {
+					w.WriteChunkedBody(buf[:n])
+				}
+				w.WriteChunkedBodyDone()
+				return
+			}
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			n, err = w.WriteChunkedBody(buf[:n])
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
 	}
 	w.WriteStatusLine(response.StatusOK)
 	headers := response.GetDefaultHeaders(len(response.SuccessHTML))
