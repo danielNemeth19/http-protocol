@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
@@ -45,19 +46,28 @@ func myHandler(w *response.Writer, req *request.Request) {
 	}
 	toGet, found := strings.CutPrefix(target, "/httpbin")
 	if found {
-		toTarget := "https://httpbin.org" + toGet
+		// toTarget := "https://httpbin.org" + toGet
+		toTarget := "http://localhost:8080" + toGet
 		resp, _ := http.Get(toTarget)
 		w.WriteStatusLine(response.StatusOK)
 		headers := response.GetChunkedHeaders()
+		headers.Set("Trailer", "X-Content-SHA256")
+		headers.Set("Trailer", "X-Content-Lenght")
 		w.WriteHeaders(headers)
 		buf := make([]byte, 1024)
+		var content []byte
 		for {
 			n, err := resp.Body.Read(buf)
+			if n > 0 {
+				content = append(content, buf[:n]...)
+			}
 			if err == io.EOF {
 				if n > 0 {
 					w.WriteChunkedBody(buf[:n])
 				}
 				w.WriteChunkedBodyDone()
+				size := sha256.Sum256(buf)
+				fmt.Printf("%x\n", size)
 				return
 			}
 			if err != nil {

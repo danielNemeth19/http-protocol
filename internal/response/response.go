@@ -138,6 +138,10 @@ func (w *Writer) WriteChunkedBodyDone() (int, error) {
 	return 0, nil
 }
 
+func (w *Writer) WriteTrailers(h headers.Headers) error {
+	return nil
+}
+
 func GetDefaultHeaders(contentLen int) headers.Headers {
 	headers := headers.NewHeaders()
 	headers.Set("Content-Length", strconv.Itoa(contentLen))
