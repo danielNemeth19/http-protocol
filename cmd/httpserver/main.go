@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/danielNemeth19/http-protocol/internal/request"
 	"github.com/danielNemeth19/http-protocol/internal/response"
 	"github.com/danielNemeth19/http-protocol/internal/server"
+	"github.com/danielNemeth19/http-protocol/internal/headers"
 )
 
 const port = 42069
@@ -46,14 +48,14 @@ func myHandler(w *response.Writer, req *request.Request) {
 	}
 	toGet, found := strings.CutPrefix(target, "/httpbin")
 	if found {
-		// toTarget := "https://httpbin.org" + toGet
-		toTarget := "http://localhost:8080" + toGet
+		toTarget := "https://httpbin.org" + toGet
+		// toTarget := "http://localhost:8080" + toGet
 		resp, _ := http.Get(toTarget)
 		w.WriteStatusLine(response.StatusOK)
-		headers := response.GetChunkedHeaders()
-		headers.Set("Trailer", "X-Content-SHA256")
-		headers.Set("Trailer", "X-Content-Lenght")
-		w.WriteHeaders(headers)
+		h := response.GetChunkedHeaders()
+		h.Set("Trailer", "X-Content-Sha256")
+		h.Set("Trailer", "X-Content-Length")
+		w.WriteHeaders(h)
 		buf := make([]byte, 1024)
 		var content []byte
 		for {
@@ -66,8 +68,11 @@ func myHandler(w *response.Writer, req *request.Request) {
 					w.WriteChunkedBody(buf[:n])
 				}
 				w.WriteChunkedBodyDone()
-				size := sha256.Sum256(buf)
-				fmt.Printf("%x\n", size)
+				hash := sha256.Sum256(content)
+				trailers := headers.NewHeaders()
+				trailers.Set("X-Content-Sha256", fmt.Sprintf("%x", hash))
+				trailers.Set("Content-Length", strconv.Itoa(len(content)))
+				w.WriteTrailers(trailers)
 				return
 			}
 			if err != nil {
