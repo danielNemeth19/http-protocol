@@ -133,13 +133,12 @@ func (w *Writer) WriteChunkedBodyDone() (int, error) {
 	if w.state != writeStateBody {
 		return 0, fmt.Errorf("Writer expected to be in writeStateBody state, got: %d", w.state)
 	}
-	fmt.Fprintf(w.Writer, "0\r\n\r\n")
+	fmt.Fprintf(w.Writer, "0\r\n")
 	w.state = done
 	return 0, nil
 }
 
 func (w *Writer) WriteTrailers(h headers.Headers) error {
-	fmt.Fprintf(w.Writer, "0\r\n")
 	for k, v := range h {
 		data := k + ": " + v + "\r\n"
 		w.Writer.Write([]byte(data))

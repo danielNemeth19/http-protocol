@@ -48,8 +48,8 @@ func myHandler(w *response.Writer, req *request.Request) {
 	}
 	toGet, found := strings.CutPrefix(target, "/httpbin")
 	if found {
-		toTarget := "https://httpbin.org" + toGet
-		// toTarget := "http://localhost:8080" + toGet
+		// toTarget := "https://httpbin.org" + toGet
+		toTarget := "http://localhost:8080" + toGet
 		resp, _ := http.Get(toTarget)
 		w.WriteStatusLine(response.StatusOK)
 		h := response.GetChunkedHeaders()
@@ -71,7 +71,7 @@ func myHandler(w *response.Writer, req *request.Request) {
 				hash := sha256.Sum256(content)
 				trailers := headers.NewHeaders()
 				trailers.Set("X-Content-Sha256", fmt.Sprintf("%x", hash))
-				trailers.Set("Content-Length", strconv.Itoa(len(content)))
+				trailers.Set("X-Content-Length", strconv.Itoa(len(content)))
 				w.WriteTrailers(trailers)
 				return
 			}

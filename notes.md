@@ -101,6 +101,40 @@ Chunked encoding is most often used for:
 * Real-time updates (like a chat-style application)
 * Sending data of unknown size (like a live feed)
 
+
+### Trailers
+We can have additional headers at the end of chunked encoding, called trailers. As per [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112#section-7.1.2), a trailer section
+allows the sender to include additional fields at the end of a chunked message in order to supply metadata that might be dynamically generated while the content is sent,
+such as a message integritiy check, digital signature, or post-processing status.
+
+As [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-6.6.2) details, the "Trailer" header field provides a list of field names that the sender anticipates sending as
+trailer fields within that message. This allows a recipient to prepare for receipt of the indicated metadata before it starts processing the content. The RCF also states that
+a sender that intends to generate one or more trailer fields in a message SHOULD generate a Trailer header field in the header section of that message to indicate which fields
+might present in the trailers.
+
+**Example HTTP Response with Trailers:**
+````markdown
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Trailer: X-Checksum, X-Content-Sha256
+
+5\r\n
+Hello\r\n
+6\r\n
+ world\r\n
+0\r\n
+X-Checksum: abc123\r\n
+X-Content-Sha256: 123nasd123\r\n
+\r\n
+````
+
+So to summarize, in case of trailers:
+* trailers are listed in `Trailer` header
+* they are added after the end of the chunked message: so after `0\r\n`
+* trailers are formatted as headers: `trailer section = *( field-line CRLF)`
+* there should be a closing `CRLF` (`\r\n`) after the trailers.
+
 ---
 # TCP Chapter
 
