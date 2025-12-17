@@ -20,3 +20,5 @@ package main
 profiling
 
 .env
+
+assets/

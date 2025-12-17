@@ -12,10 +12,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/danielNemeth19/http-protocol/internal/headers"
 	"github.com/danielNemeth19/http-protocol/internal/request"
 	"github.com/danielNemeth19/http-protocol/internal/response"
 	"github.com/danielNemeth19/http-protocol/internal/server"
-	"github.com/danielNemeth19/http-protocol/internal/headers"
 )
 
 const port = 42069
@@ -45,6 +45,18 @@ func myHandler(w *response.Writer, req *request.Request) {
 		w.WriteHeaders(headers)
 		w.WriteBody([]byte(resp.Message))
 		return
+	}
+	if target == "/video" {
+		video, err := os.ReadFile("/home/daniel/go/src/http-protocol/assets/vim.mp4")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w.WriteStatusLine(response.StatusOK)
+		headers := response.GetDefaultHeaders(len(video))
+		headers = response.ReplaceHeader(map[string]string{"Content-Type": "video/mp4"}, headers)
+		w.WriteHeaders(headers)
+		w.WriteBody(video)
 	}
 	toGet, found := strings.CutPrefix(target, "/httpbin")
 	if found {

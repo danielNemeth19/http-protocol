@@ -135,6 +135,29 @@ So to summarize, in case of trailers:
 * trailers are formatted as headers: `trailer section = *( field-line CRLF)`
 * there should be a closing `CRLF` (`\r\n`) after the trailers.
 
+# [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2)
+
+HTTP/2 leaves all of HTTP/1.1's high level semantics, such as methods, status codes, header fields, and URIs the same.
+What is new how the data is framed and transported between the client and the server.
+
+Some key points:
+* it's a binary protocol, as opposed to HTTP/1.1 which is text-based
+* uses [multiplexing](https://en.wikipedia.org/wiki/Multiplexing), which allows mutliple requests and responses to be sent over a single connection at the same time
+* uses header compression to save on header bandwith
+* implements [server push](https://en.wikipedia.org/wiki/HTTP/2_Server_Push), which allows the server to send resources before they are requested by the client
+* does NOT support chunked transfer encoding, as it provides its own, more efficent mechanism for data streaming
+
+# [HTTP/3](https://en.wikipedia.org/wiki/HTTP/3)
+
+Unlike HTTP/1.1 and HTTP/2 which relies on TCP, HTTP/3 uses [QUIC](https://en.wikipedia.org/wiki/QUIC), a multiplexed trasport protocol built on UDP.
+
+Key points:
+* QUIC is a [transport layer](https://en.wikipedia.org/wiki/Transport_layer) [network protocol](https://en.wikipedia.org/wiki/Communication_protocol)
+which uses [user space](https://en.wikipedia.org/wiki/User_space_and_kernel_space) [congestion control](https://en.wikipedia.org/wiki/Network_congestion#Congestion_control)
+over the [User Datagram protocol](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
+* since QUIC runs over UDP, this allows for faster connection establishment and improved performance
+* still uses the same high level semantics, but mandates encryption at the HTTP protocol level (HTTP/1.1 is unencrypted by default, it needs [HTTPS](https://en.wikipedia.org/wiki/HTTPS) to be secure)
+
 ---
 # TCP Chapter
 
