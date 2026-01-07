@@ -117,13 +117,14 @@ func (r *Request) parse(data []byte) (int, error) {
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	var reqLine RequestLine
 
-	endLineSep := bytes.Index(b, endLine)
-	if endLineSep == -1 {
+	// endLineSep := bytes.Index(b, endLine)
+	before, _, found := bytes.Cut(b, endLine)
+	if !found {
 		return nil, 0, nil
 	}
 
-	line := b[:endLineSep]
-	parts := strings.Split(string(line), " ")
+	// line := b[:endLineSep]
+	parts := strings.Split(string(before), " ")
 	if len(parts) != 3 {
 		return nil, 0, fmt.Errorf("Request line supposed to have three parts, got: %d\n", len(parts))
 	}
@@ -139,7 +140,7 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	reqLine.Method = method
 	reqLine.RequestTarget = target
 	reqLine.HttpVersion = version
-	return &reqLine, len(line) + len(endLine), nil
+	return &reqLine, len(before) + len(endLine), nil
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {

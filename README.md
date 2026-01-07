@@ -12,7 +12,7 @@
 - [RFC 7231](https://datatracker.ietf.org/doc/html/rfc7231) can be verbose; [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112) is concise but assumes familiarity with [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110).
 
 ---
-# HTTP message format
+### HTTP message format
 
 An HTTP/1.1 message consists of:
 * a start-line followed by a CRLF and a sequence of octets (bytes) in a format similar to the Internet Message Format [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322):
@@ -27,8 +27,7 @@ HTTP-message = start-line CRLF
                [ message body ]
 
 ```
-
-### ABNF Notation
+#### ABNF Notation
 
 - **`SP`**: Space character (ASCII 0x20). Used to separate elements in a line.
 - **`CRLF`**: Carriage Return + Line Feed (`\r\n`). Standard line ending in HTTP.
@@ -38,13 +37,24 @@ HTTP-message = start-line CRLF
 These notations follow the Augmented Backus-Naur Form (ABNF) as defined in [RFC 5234](https://datatracker.ietf.org/doc/html/rfc5234) and referenced by [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#section-2.1).
 
 
-## Request
+#### Breakdown of parts with examples:
+
+| Part                | Example             | Description                                                  |
+|---------------------|---------------------|--------------------------------------------------------------|
+| start-line CRLF     |  POST /users/add    | The request (for a request) or status (for a response)       |
+| *( field-line CRLF) | HOST: google.com    | Zero or more line of HTTP headers. These are key-value pairs |
+| CRLF                |                     | A blank line that separates the headers from the body        |
+| [ message body]     | {"name": "JohnDoe"} | The body of the message. This is optional                    |
+
+
+### Request
 
 TBD
 
-## Response
+### Response
 
-For a response, the start-line is called `status-line`. From [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112):
+For a response, the start-line is called `status-line`.
+From [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112):
 
 ```markdown
 status-line = HTTP-version SP status-code SP [ reason phrase ]
@@ -61,7 +71,7 @@ About the `reason phrase`, from [Section 4](https://datatracker.ietf.org/doc/htm
 A client SHOULD ignore the reason-phrase content because it is not a reliable channel for information (it might be translated for a given locale, overwritten by intermediaries, or discarded when the message is forwarded via other versions of HTTP). A server MUST send the space that separates the status-code from the reason-phrase even when the reason-phrase is absent (i.e., the status-line would end with the space)
 
 
-## Chunked Encoding
+### Chunked Encoding
 
 The HTTP `Transfer-Encoding` request and response header specifies the form of encoding used to transfer messages between nodes on the network.
 
@@ -90,7 +100,7 @@ Where:
 
 The pattern can be repeated as many times as necessary to send the entire message body. 
 
-### Directives
+#### Directives
 Data is sent in series of chunks. Content can be sent in streams of unknown size to be tranferred as a sequence of length-delimited buffers,
 so the sender can keep a connection open, and let the recepient know when it has received the entire message.
 The `Content-Length` header must be omitted, and at the begining of each chunk, a string of hex digits indicates the size of the chunk-data in octets, followed by `\r\n` and
@@ -102,7 +112,7 @@ Chunked encoding is most often used for:
 * Sending data of unknown size (like a live feed)
 
 
-### Trailers
+#### Trailers
 We can have additional headers at the end of chunked encoding, called trailers. As per [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112#section-7.1.2), a trailer section
 allows the sender to include additional fields at the end of a chunked message in order to supply metadata that might be dynamically generated while the content is sent,
 such as a message integritiy check, digital signature, or post-processing status.
@@ -136,15 +146,15 @@ So to summarize, in case of trailers:
 * there should be a closing `CRLF` (`\r\n`) after the trailers.
 
 ---
-# TCP Chapter
+## TCP Chapter
 
-## Run TCP Listener and Redirect Output
+### Run TCP Listener and Redirect Output
 
 ```sh
 go run ./cmd/tcplistener | tee /tmp/tcp.txt
 ```
 
-## Send Message via Netcat
+### Send Message via Netcat
 
 In another shell:
 
@@ -156,15 +166,15 @@ Netcat will transmit the message with 1 second timeout time
 
 ---
 
-# TCP Chapter: UDP Sender
+## TCP Chapter: UDP Sender
 
-## Run UDP Sender
+### Run UDP Sender
 
 ```sh
 go run ./cmd/udpsender
 ```
 
-## Start UDP Listener
+### Start UDP Listener
 
 In a separate terminal (-l option starts up an upd listener):
 
@@ -176,15 +186,15 @@ Messages sent in the UDP sender terminal should appear in the listener terminal.
 
 ---
 
-# Requests Chapter: TCP to HTTP
+## Requests Chapter: TCP to HTTP
 
-## Run TCP Listener and Redirect Output
+### Run TCP Listener and Redirect Output
 
 ```sh
 go run ./cmd/tcplistener | tee /tmp/rawget.http
 ```
 
-## Send HTTP GET Request
+### Send HTTP GET Request
 
 From another shell:
 
@@ -206,7 +216,7 @@ curl http://localhost:42069/coffee
 
 ---
 
-# Explanations
+## Explanations
 
 - **Reading from a network** is conceptually similar to reading from a file:
     - From a file, we *pull* data (control how much we read).
@@ -215,7 +225,7 @@ curl http://localhost:42069/coffee
 
 ---
 
-# `RequestFromReader` Key Concepts
+## `RequestFromReader` Key Concepts
 - Buffer (`buf`) is initialized to hold incoming data.
     - in tests, `numBytesPerRead` in `chunkReader` can mimic the network, sending arbitrary amount of bytes
 - we need to track the amount of bytes that we read from the stream (`readToIndex`)
@@ -247,7 +257,7 @@ curl http://localhost:42069/coffee
 
 ---
 
-# Debug Notes
+## Debug Notes
 
 To run a test with `dlv`:
 
