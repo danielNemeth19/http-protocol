@@ -49,7 +49,38 @@ These notations follow the Augmented Backus-Naur Form (ABNF) as defined in [RFC 
 
 ### Request
 
-TBD
+For a request, the start-line is called `request-line`.
+From [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112#name-request-line):
+
+A request-line begins with a method token, followed by a single space (SP) the request-target, and another
+single space (SP), and ends with the protocol version:
+
+```markdown
+request-line = method SP request-target SP HTTP-version
+```
+
+The method token indicates the reques method to be performed on the target resource.
+The request method is case sensitive. Methods are defined in [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-methods)
+
+Methods:
+
+| Method   | Description                                                                          |Safe?| Idempotent
+|----------|--------------------------------------------------------------------------------------|-----|------------
+|  GET     | Transfer current representation of the target resource                               | YES | YES
+|  HEAD    | Same as GET, but do not transfer the response content                                | YES | YES
+|  POST    | Perform resource-specific processing on the request content                          | NO  | NO
+|  PUT     | Replace all current representations of the target resource with the request content  | NO  | YES
+|  DELETE  | Remove all current representations of the target resource with the request content   | NO  | YES
+|  CONNECT | Establish a tunnel to the server identified by the target resource                   | NO  | NO
+|  OPTIONS | Describes the communication options for the target resource                          | YES | YES
+|  TRACE   | Perform a message look-back test along the path to the target resource               | YES | YES
+
+
+For example:
+
+```markdown
+GET /login 
+```
 
 ### Response
 
