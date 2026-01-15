@@ -60,26 +60,30 @@ request-line = method SP request-target SP HTTP-version
 ```
 
 The method token indicates the reques method to be performed on the target resource.
-The request method is case sensitive. Methods are defined in [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-methods)
+The request method is case sensitive. Methods are defined in [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-methods),
+with the exception of `PATCH` which is defined in [RFC 5789](https://datatracker.ietf.org/doc/html/rfc5789).
 
-Methods:
 
-| Method   | Description                                                                          |Safe?| Idempotent
-|----------|--------------------------------------------------------------------------------------|-----|------------
-|  GET     | Transfer current representation of the target resource                               | YES | YES
-|  HEAD    | Same as GET, but do not transfer the response content                                | YES | YES
-|  POST    | Perform resource-specific processing on the request content                          | NO  | NO
-|  PUT     | Replace all current representations of the target resource with the request content  | NO  | YES
-|  DELETE  | Remove all current representations of the target resource with the request content   | NO  | YES
-|  CONNECT | Establish a tunnel to the server identified by the target resource                   | NO  | NO
-|  OPTIONS | Describes the communication options for the target resource                          | YES | YES
-|  TRACE   | Perform a message look-back test along the path to the target resource               | YES | YES
+| Method   | Description                                                                          | Safe | Idempotent |
+|----------|--------------------------------------------------------------------------------------|------|------------|
+|  GET     | Transfer current representation of the target resource                               | YES  |    YES     |
+|  HEAD    | Same as GET, but do not transfer the response content                                | YES  |    YES     |
+|  POST    | Perform resource-specific processing on the request content                          | NO   |    NO      |
+|  PUT     | Replace all current representations of the target resource with the request content  | NO   |    YES     |
+|  PATCH   | Apply partial modification to a resource                                             | NO   |    NO      |
+|  DELETE  | Remove all current representations of the target resource                            | NO   |    YES     |
+|  CONNECT | Establish a tunnel to the server identified by the target resource                   | NO   |    NO      |
+|  OPTIONS | Describes the communication options for the target resource                          | YES  |    YES     |
+|  TRACE   | Perform a message look-back test along the path to the target resource               | YES  |    YES     |
 
+**Notes:**
+- "Safe" means the method does not modify resources.
+- "Idempotent" means repeating the request has the same effect as making it once.
 
 For example:
 
 ```markdown
-GET /login 
+GET /login  HTTP/1.1
 ```
 
 ### Response
