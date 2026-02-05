@@ -15,19 +15,21 @@
 ### HTTP message format
 
 An HTTP/1.1 message consists of:
-* a start-line followed by a CRLF and a sequence of octets (bytes) in a format similar to the Internet Message Format [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322):
-    * zero or more header field lines (collectively referred to as the "headers" or the "header section")
-    * an empty line indicating the end of the header section
-    * and an optional message body.
+* a start-line followed by a CRLF
+* zero or more header field lines (collectively referred to as the "headers" or the "header section")
+* an empty line indicating the end of the header section (CRLF)
+* an optional message body
+
+The format is similar to the Internet Message Format [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322).
 
 ``` markdown
 HTTP-message = start-line CRLF
                *( field-line CRLF)
                CRLF
                [ message body ]
-
 ```
-#### ABNF Notation
+
+#### ABNF Notation Explained
 
 - **`SP`**: Space character (ASCII 0x20). Used to separate elements in a line.
 - **`CRLF`**: Carriage Return + Line Feed (`\r\n`). Standard line ending in HTTP.
@@ -39,12 +41,12 @@ These notations follow the Augmented Backus-Naur Form (ABNF) as defined in [RFC 
 
 #### Breakdown of parts with examples:
 
-| Part                | Example             | Description                                                  |
-|---------------------|---------------------|--------------------------------------------------------------|
-| start-line CRLF     |  POST /users/add    | The request (for a request) or status (for a response)       |
-| *( field-line CRLF) | HOST: google.com    | Zero or more line of HTTP headers. These are key-value pairs |
-| CRLF                |                     | A blank line that separates the headers from the body        |
-| [ message body]     | {"name": "JohnDoe"} | The body of the message. This is optional                    |
+| Part                | Example                     | Description                                                  |
+|---------------------|-----------------------------|--------------------------------------------------------------|
+| start-line CRLF     | POST /users/add HTTP/1.1\r\n| The request (for a request) or status (for a response)       |
+| *( field-line CRLF) | Host: google.com\r\n        | Zero or more line of HTTP headers. These are key-value pairs |
+| CRLF                | \r\n                        | A blank line that separates the headers from the body        |
+| [ message body]     | {"name": "JohnDoe"}         | The body of the message. This is optional                    |
 
 
 ### Request
@@ -59,7 +61,13 @@ single space (SP), and ends with the protocol version:
 request-line = method SP request-target SP HTTP-version
 ```
 
-The method token indicates the reques method to be performed on the target resource.
+For example:
+
+```markdown
+GET /login  HTTP/1.1
+```
+
+The method token indicates the request method to be performed on the target resource.
 The request method is case sensitive. Methods are defined in [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-methods),
 with the exception of `PATCH` which is defined in [RFC 5789](https://datatracker.ietf.org/doc/html/rfc5789).
 
@@ -80,23 +88,19 @@ with the exception of `PATCH` which is defined in [RFC 5789](https://datatracker
 - "Safe" means the method does not modify resources.
 - "Idempotent" means repeating the request has the same effect as making it once.
 
-For example:
-
-```markdown
-GET /login  HTTP/1.1
-```
 
 ### Response
 
 For a response, the start-line is called `status-line`.
 From [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112):
 
+The first line of a response message is the status-line, consisting of the protocol version, a space (SP), the status code, and another space and ending with an OPTIONAL textual phrase describing the status code.
+
 ```markdown
 status-line = HTTP-version SP status-code SP [ reason phrase ]
 ```
 
 For example:
-
 ```markdown
 HTTP/1.1 200 OK
 ```
